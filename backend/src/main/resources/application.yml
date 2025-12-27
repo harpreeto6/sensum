@@ -3,6 +3,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/sensum
     username: sensum
     password: sensum
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
   jpa:
     hibernate:
       ddl-auto: update

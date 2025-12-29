@@ -32,6 +32,14 @@ type ProgressResponse = {
   gainedXp: number;
 };
 
+type TodayStats = {
+  trackedSeconds: number;
+  trackedMinutes: number;
+  nudgesShown: number;
+  questsCompletedToday: number;
+  questsCompletedAfterFirstNudge: number;
+};
+
 const PATHS = ["music", "fitness", "study", "friends", "calm", "outdoors"] as const;
 const MOODS = ["good", "okay", "stressed", "tired"] as const;
 
@@ -47,6 +55,8 @@ export default function TodayPage() {
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [msg, setMsg] = useState("");
 
+  const [stats, setStats] = useState<TodayStats | null>(null);
+
   useEffect(() => {
     const raw = localStorage.getItem("userId");
     if (!raw) {
@@ -57,7 +67,17 @@ export default function TodayPage() {
 
     const savedPath = localStorage.getItem("path");
     if (savedPath && PATHS.includes(savedPath as any)) setPath(savedPath as any);
+
+    loadStats();
   }, [router]);
+
+
+
+  async function loadStats() {
+      const res = await fetch("/api/stats/today", { cache: "no-store" });
+      if (!res.ok) return;
+      setStats(await res.json());
+    }
 
   async function loadQuests(selectedPath = path) {
     setMsg("");
@@ -112,6 +132,9 @@ export default function TodayPage() {
     setMomentText("");
     setMsg(`Nice. +${data.gainedXp} XP`);
     await loadQuests(path);
+
+    await loadStats();
+
   }
 
   return (
@@ -127,6 +150,14 @@ export default function TodayPage() {
           <p><b>XP:</b> {progress.xp} &nbsp; <b>Level:</b> {progress.level} &nbsp; <b>Streak:</b> {progress.streak}</p>
         </div>
       )}
+
+      {stats && (
+          <div className="border rounded p-3">
+            <p><b>Time on tracked sites today:</b> {stats.trackedMinutes} min</p>
+            <p><b>Nudges shown:</b> {stats.nudgesShown}</p>
+            <p><b>Quests after first nudge:</b> {stats.questsCompletedAfterFirstNudge}</p>
+          </div>
+        )}
 
       <section className="space-y-2">
         <p className="font-semibold">Pick a path</p>

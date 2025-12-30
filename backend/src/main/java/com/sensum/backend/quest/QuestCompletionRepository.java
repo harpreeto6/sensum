@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface QuestCompletionRepository extends JpaRepository<QuestCompletion, Long> {
     List<QuestCompletion> findTop1ByUserIdOrderByCompletedAtDesc(Long userId);
+    List<QuestCompletion> findTop10ByUserIdOrderByCompletedAtDesc(Long userId);
 }

@@ -143,6 +143,7 @@ export default function TodayPage() {
         <h1 className="text-2xl font-bold">Sensum — Today</h1>
         <a className="underline" href="/moments">Moments</a>
         <a className="underline" href="/profile">Profile</a>
+        <a className="underline" href="/friends">Friends</a>
       </header>
 
       {progress && (

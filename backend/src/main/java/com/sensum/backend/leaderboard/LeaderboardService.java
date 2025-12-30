@@ -39,7 +39,7 @@ public class LeaderboardService {
         List<Friendship> friendships = friendshipRepository.findByUserId(userId);
         Set<Long> friendIds = friendships.stream()
                 .filter(f -> "accepted".equals(f.getStatus()))
-                .map(f->f.friendId)
+                .map(Friendship::getFriendId)
                 .collect(Collectors.toSet());
 
         // Add self to the list

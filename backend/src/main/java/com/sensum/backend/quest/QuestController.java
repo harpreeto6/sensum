@@ -55,14 +55,14 @@ public class QuestController {
 
         // 1) insert completion row
         QuestCompletion c = new QuestCompletion();
-        c.userId = req.userId;
-        c.questId = req.questId;
-        c.mood = req.mood;
-        c.momentText = req.momentText;
+        c.setUserId(req.userId);
+        c.setQuestId(req.questId);
+        c.setMood(req.mood);
+        c.setMomentText(req.momentText);
         completionRepo.save(c);
 
         // 2) update progress
-        int gainedXp = (q.durationSec / 60) * 10; // simple rule
+        int gainedXp = (q.getDurationSec() / 60) * 10; // simple rule
         u.xp += gainedXp;
         u.level = 1 + (u.xp / 500);
 

@@ -8,20 +8,38 @@ import java.time.Instant;
 public class Invite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
     @Column(nullable = false, unique = true)
-    public String code;
+    private String code;
 
     @Column(name = "inviter_id", nullable = false)
-    public Long inviterId;
+    private Long inviterId;
 
     @Column(name = "expires_at", nullable = false)
-    public Instant expiresAt;
+    private Instant expiresAt;
 
     @Column(name = "used_at")
-    public Instant usedAt;
+    private Instant usedAt;
 
     @Column(nullable = false)
-    public Instant createdAt = Instant.now();
+    private Instant createdAt = Instant.now();
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+
+    public Long getInviterId() { return inviterId; }
+    public void setInviterId(Long inviterId) { this.inviterId = inviterId; }
+
+    public Instant getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
+
+    public Instant getUsedAt() { return usedAt; }
+    public void setUsedAt(Instant usedAt) { this.usedAt = usedAt; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

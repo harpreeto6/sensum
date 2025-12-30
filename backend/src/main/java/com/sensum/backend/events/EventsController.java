@@ -42,17 +42,17 @@ public class EventsController {
         Event e = new Event();
 
         // Optional
-        if (node.hasNonNull("userId")) e.userId = node.get("userId").asLong();
+        if (node.hasNonNull("userId")) e.setUserId(node.get("userId").asLong());
 
-        e.domain = node.get("domain").asText();
-        e.durationSec = node.get("durationSec").asInt();
-        e.eventType = node.get("eventType").asText();
+        e.setDomain(node.get("domain").asText());
+        e.setDurationSec(node.get("durationSec").asInt());
+        e.setEventType(node.get("eventType").asText());
 
         // Optional: if missing, default to now
         if (node.hasNonNull("ts")) {
-            e.ts = Instant.parse(node.get("ts").asText());
+            e.setTs(Instant.parse(node.get("ts").asText()));
         } else {
-            e.ts = Instant.now();
+            e.setTs(Instant.now());
         }
 
         return e;

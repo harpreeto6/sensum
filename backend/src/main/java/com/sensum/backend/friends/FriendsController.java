@@ -70,9 +70,9 @@ public class FriendsController {
         if (code == null) throw new RuntimeException("Could not generate invite code");
 
         Invite inv = new Invite();
-        inv.code = code;
-        inv.inviterId = inviter.id;
-        inv.expiresAt = Instant.now().plus(7, ChronoUnit.DAYS);
+        inv.setCode(code);
+        inv.setInviterId(inviter.getId());
+        inv.setExpiresAt(Instant.now().plus(7, ChronoUnit.DAYS));
         invites.save(inv);
 
         String link = "http://localhost:3000/friends?code=" + code;
@@ -85,15 +85,15 @@ public class FriendsController {
         User accepter = users.findById(req.userId).orElseThrow();
 
         Invite inv = invites.findByCode(req.code).orElseThrow(() -> new RuntimeException("Invalid code"));
-        if (inv.usedAt != null) throw new RuntimeException("Invite already used");
-        if (Instant.now().isAfter(inv.expiresAt)) throw new RuntimeException("Invite expired");
-        if (inv.inviterId.equals(accepter.id)) throw new RuntimeException("Cannot accept your own invite");
+        if (inv.getUsedAt() != null) throw new RuntimeException("Invite already used");
+        if (Instant.now().isAfter(inv.getExpiresAt())) throw new RuntimeException("Invite expired");
+        if (inv.getInviterId().equals(accepter.getId())) throw new RuntimeException("Cannot accept your own invite");
 
         // Create accepted friendships in both directions (upsert-ish)
-        upsertFriendship(inv.inviterId, accepter.id, "accepted");
-        upsertFriendship(accepter.id, inv.inviterId, "accepted");
+        upsertFriendship(inv.getInviterId(), accepter.getId(), "accepted");
+        upsertFriendship(accepter.getId(), inv.getInviterId(), "accepted");
 
-        inv.usedAt = Instant.now();
+        inv.setUsedAt(Instant.now());
         invites.save(inv);
 
         return "ok";
@@ -108,8 +108,8 @@ public class FriendsController {
         List<FriendRow> out = new ArrayList<>();
 
         for (Friendship f : rows) {
-            User friend = users.findById(f.friendId).orElse(null);
-            out.add(new FriendRow(f.friendId, friend == null ? "(deleted)" : friend.email, f.getStatus()));
+            User friend = users.findById(f.getFriendId()).orElse(null);
+            out.add(new FriendRow(f.getFriendId(), friend == null ? "(deleted)" : friend.getEmail(), f.getStatus()));
         }
 
         return out;
@@ -142,8 +142,8 @@ public class FriendsController {
         Friendship f = friendships.findByUserIdAndFriendId(userId, friendId).orElse(null);
         if (f == null) {
             f = new Friendship();
-            f.userId = userId;
-            f.friendId = friendId;
+            f.setUserId(userId);
+            f.setFriendId(friendId);
             f.setStatus(status);
             friendships.save(f);
         } else {
@@ -172,7 +172,7 @@ public class FriendsController {
         List<Friendship> rows = friendships.findByUserId(userId);
         List<Long> acceptedFriendIds = new ArrayList<>();
         for (Friendship f : rows) {
-            if ("accepted".equals(f.getStatus())) acceptedFriendIds.add(f.friendId);
+            if ("accepted".equals(f.getStatus())) acceptedFriendIds.add(f.getFriendId());
         }
 
         // 2) Build items
@@ -194,17 +194,17 @@ public class FriendsController {
             List<QuestCompletion> completions = completionRepo.findTop10ByUserIdOrderByCompletedAtDesc(friendId);
 
             for (QuestCompletion c : completions) {
-                Quest q = questRepo.findById(c.questId).orElse(null);
+                Quest q = questRepo.findById(c.getQuestId()).orElse(null);
 
                 FeedItem item = new FeedItem();
                 item.friendId = friendId;
-                item.friendEmail = friend.email;
-                item.at = c.completedAt;
+                item.friendEmail = friend.getEmail();
+                item.at = c.getCompletedAt();
 
-                if (shareLevel) { item.level = friend.level; item.xp = friend.xp; }
-                if (shareStreak) { item.streak = friend.streak; }
-                if (shareCategories) { item.category = q == null ? null : q.category; }
-                if (shareMoments) { item.momentText = c.momentText; }
+                if (shareLevel) { item.level = friend.getLevel(); item.xp = friend.getXp(); }
+                if (shareStreak) { item.streak = friend.getStreak(); }
+                if (shareCategories) { item.category = q == null ? null : q.getCategory(); }
+                if (shareMoments) { item.momentText = c.getMomentText(); }
 
                 items.add(item);
             }

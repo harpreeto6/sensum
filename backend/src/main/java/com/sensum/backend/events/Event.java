@@ -8,23 +8,44 @@ import java.time.Instant;
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
     @Column(name = "user_id")
-    public Long userId; // nullable for now
+    private Long userId;
 
     @Column(nullable = false)
-    public String domain;
+    private String domain;
 
     @Column(name = "duration_sec", nullable = false)
-    public int durationSec;
+    private int durationSec;
 
     @Column(name = "event_type", nullable = false)
-    public String eventType;
+    private String eventType;
 
     @Column(nullable = false)
-    public Instant ts;
+    private Instant ts;
 
     @Column(name = "created_at", nullable = false)
-    public Instant createdAt = Instant.now();
+    private Instant createdAt = Instant.now();
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+
+    public String getDomain() { return domain; }
+    public void setDomain(String domain) { this.domain = domain; }
+
+    public int getDurationSec() { return durationSec; }
+    public void setDurationSec(int durationSec) { this.durationSec = durationSec; }
+
+    public String getEventType() { return eventType; }
+    public void setEventType(String eventType) { this.eventType = eventType; }
+
+    public Instant getTs() { return ts; }
+    public void setTs(Instant ts) { this.ts = ts; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

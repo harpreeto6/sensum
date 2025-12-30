@@ -7,15 +7,33 @@ import java.time.Instant;
 @Table(name="quest_completions")
 public class QuestCompletion {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
-    public Long userId;
-    public Long questId;
-    public String mood;
+    private Long userId;
+    private Long questId;
+    private String mood;
 
     @Column(name="moment_text")
-    public String momentText;
+    private String momentText;
 
     @Column(name="completed_at")
-    public Instant completedAt = Instant.now();
+    private Instant completedAt = Instant.now();
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+
+    public Long getQuestId() { return questId; }
+    public void setQuestId(Long questId) { this.questId = questId; }
+
+    public String getMood() { return mood; }
+    public void setMood(String mood) { this.mood = mood; }
+
+    public String getMomentText() { return momentText; }
+    public void setMomentText(String momentText) { this.momentText = momentText; }
+
+    public Instant getCompletedAt() { return completedAt; }
+    public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
 }

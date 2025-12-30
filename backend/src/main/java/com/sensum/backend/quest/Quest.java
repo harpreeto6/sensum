@@ -6,13 +6,28 @@ import jakarta.persistence.*;
 @Table(name="quests")
 public class Quest {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
-    public String category;
-    public String title;
+    private String category;
+    private String title;
 
     @Column(name="duration_sec")
-    public int durationSec;
+    private int durationSec;
 
-    public String prompt;
+    private String prompt;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public int getDurationSec() { return durationSec; }
+    public void setDurationSec(int durationSec) { this.durationSec = durationSec; }
+
+    public String getPrompt() { return prompt; }
+    public void setPrompt(String prompt) { this.prompt = prompt; }
 }

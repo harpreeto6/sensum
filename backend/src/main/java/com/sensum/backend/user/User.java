@@ -24,4 +24,20 @@ public class User {
 
     @Column(nullable = false)
     public Instant createdAt = Instant.now();
+
+    public int getXp() {
+        return xp;
+    }
+    public int getLevel() {
+        return level;
+    }
+    public int getStreak() {
+        return streak;
+    }
+    public String getEmail() {
+        return email;
+    }
+    public Long getId() {
+        return id;
+    }
 }

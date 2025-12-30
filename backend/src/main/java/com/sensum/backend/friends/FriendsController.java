@@ -109,7 +109,7 @@ public class FriendsController {
 
         for (Friendship f : rows) {
             User friend = users.findById(f.friendId).orElse(null);
-            out.add(new FriendRow(f.friendId, friend == null ? "(deleted)" : friend.email, f.status));
+            out.add(new FriendRow(f.friendId, friend == null ? "(deleted)" : friend.email, f.getStatus()));
         }
 
         return out;
@@ -144,10 +144,10 @@ public class FriendsController {
             f = new Friendship();
             f.userId = userId;
             f.friendId = friendId;
-            f.status = status;
+            f.setStatus(status);
             friendships.save(f);
         } else {
-            f.status = status;
+            f.setStatus(status);
             friendships.save(f);
         }
     }
@@ -172,7 +172,7 @@ public class FriendsController {
         List<Friendship> rows = friendships.findByUserId(userId);
         List<Long> acceptedFriendIds = new ArrayList<>();
         for (Friendship f : rows) {
-            if ("accepted".equals(f.status)) acceptedFriendIds.add(f.friendId);
+            if ("accepted".equals(f.getStatus())) acceptedFriendIds.add(f.friendId);
         }
 
         // 2) Build items

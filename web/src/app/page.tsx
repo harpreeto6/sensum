@@ -16,6 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AchievementModal from './components/AchievementModal';
 
 type Quest = {
   id: number;
@@ -30,6 +31,7 @@ type ProgressResponse = {
   level: number;
   streak: number;
   gainedXp: number;
+  newAchievements?: any[];
 };
 
 type TodayStats = {
@@ -56,6 +58,9 @@ export default function TodayPage() {
   const [msg, setMsg] = useState("");
 
   const [stats, setStats] = useState<TodayStats | null>(null);
+
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
+  const [newAchievements, setNewAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     const raw = localStorage.getItem("userId");
@@ -117,6 +122,13 @@ export default function TodayPage() {
     }
 
     const data: ProgressResponse = await res.json();
+
+    // Handle newly unlocked achievements
+  
+  if (data.newAchievements && data.newAchievements.length > 0) {
+    setShowAchievementModal(true);
+    setNewAchievements(data.newAchievements);
+  }
     setProgress(data);
 
     // store a simple “moments” list locally for Day 2
@@ -144,6 +156,9 @@ export default function TodayPage() {
         <a className="underline" href="/moments">Moments</a>
         <a className="underline" href="/profile">Profile</a>
         <a className="underline" href="/friends">Friends</a>
+        <a className="underline" href="/achievements">Achievements</a>
+        <a className="underline" href="/leaderboard">Leaderboard</a>
+        <a className="underline" href="/buddy">Buddy</a>
       </header>
 
       {progress && (
@@ -223,6 +238,14 @@ export default function TodayPage() {
           </div>
         ))}
       </section>
+
+      {showAchievementModal && (
+        <AchievementModal
+          achievements={newAchievements}
+          onClose={() => setShowAchievementModal(false)}
+        />
+      )}
+
     </main>
   );
 }

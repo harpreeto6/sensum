@@ -19,8 +19,12 @@ public class Friendship {
     @Column(name = "friend_id", nullable = false)
     public Long friendId;
 
-    public String status;
+    private String status;
 
     @Column(name = "created_at", nullable = false)
     public Instant createdAt = Instant.now();
+
+    public String getStatus() { return status; }
+
+    public void setStatus(String status) { this.status = status; }
 }

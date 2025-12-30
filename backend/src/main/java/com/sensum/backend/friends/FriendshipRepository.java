@@ -16,4 +16,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     @Transactional
     @Query("DELETE FROM Friendship f WHERE f.userId = :userId AND f.friendId = :friendId")
     void deletePair(@Param("userId") Long userId, @Param("friendId") Long friendId);
+
+    @Query("SELECT COUNT(f) FROM Friendship f WHERE f.userId = :userId AND f.status = :status")
+    long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") String status);
 }

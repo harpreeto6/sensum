@@ -5,6 +5,16 @@ import java.time.Instant;
 
 @Entity
 @Table(name="quest_completions")
+/**
+ * Records a single quest completion by a user.
+ *
+ * <p>This is used for:
+ * <ul>
+ *   <li>XP/level progression</li>
+ *   <li>Activity feeds (friends)</li>
+ *   <li>Analytics (completion counts, streak logic, etc.)</li>
+ * </ul>
+ */
 public class QuestCompletion {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

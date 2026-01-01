@@ -210,6 +210,11 @@ public class FriendsController {
     }
 
     // ---- helpers ----
+    /**
+     * Upserts a directional friendship edge to the desired status.
+     *
+     * <p>This method is used to maintain the "two rows" model (A->B and B->A).
+     */
     private void upsertFriendship(Long userId, Long friendId, String status) {
         Friendship f = friendships.findByUserIdAndFriendId(userId, friendId).orElse(null);
         if (f == null) {
@@ -224,9 +229,21 @@ public class FriendsController {
         }
     }
 
+    /**
+     * Secure RNG for invite codes.
+     */
     private static final SecureRandom RNG = new SecureRandom();
+
+    /**
+     * Alphabet chosen to avoid ambiguous characters (0/O/1/I).
+     */
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 
+    /**
+     * Generates a short invite code.
+     *
+     * @param len desired length
+     */
     private static String randomCode(int len) {
         StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {

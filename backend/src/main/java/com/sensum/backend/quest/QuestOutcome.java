@@ -57,7 +57,6 @@ public class QuestOutcome {
         this.outcome = outcome;
     }
 
-    /** @return database primary key */
     public Long getId() {
         return id;
     }
@@ -66,7 +65,6 @@ public class QuestOutcome {
         this.id = id;
     }
 
-    /** @return id of the user who performed the action */
     public Long getUserId() {
         return userId;
     }
@@ -75,7 +73,6 @@ public class QuestOutcome {
         this.userId = userId;
     }
 
-    /** @return id of the quest the user interacted with */
     public Long getQuestId() {
         return questId;
     }
@@ -84,7 +81,6 @@ public class QuestOutcome {
         this.questId = questId;
     }
 
-    /** @return outcome string (completed/skipped/snoozed) */
     public String getOutcome() {
         return outcome;
     }
@@ -93,7 +89,6 @@ public class QuestOutcome {
         this.outcome = outcome;
     }
 
-    /** @return timestamp when this outcome was recorded */
     public Instant getCreatedAt() {
         return createdAt;
     }

@@ -4,6 +4,14 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name="quests")
+/**
+ * Quest definition.
+ *
+ * <p>Quests are the core "micro-actions" Sensum suggests to help users break doomscrolling
+ * cycles. A quest is defined by a category, title, expected duration, and an optional prompt.
+ *
+ * <p>Completions are stored separately in {@link QuestCompletion}.
+ */
 public class Quest {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

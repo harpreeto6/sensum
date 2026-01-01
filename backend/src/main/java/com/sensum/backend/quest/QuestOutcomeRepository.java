@@ -61,11 +61,8 @@ public interface QuestOutcomeRepository extends JpaRepository<QuestOutcome, Long
      * <p>Spring Data will auto-implement this interface based on the selected column aliases.</p>
      */
     interface QuestScoreProjection {
-        /** @return quest id */
         Long getQuestId();
-        /** @return number of times the user completed this quest */
         Long getCompleted();
-        /** @return number of times the user skipped this quest */
         Long getSkipped();
     }
 }

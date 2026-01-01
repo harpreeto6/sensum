@@ -40,7 +40,7 @@ export default function LeaderboardPage() {
         ? `/api/leaderboard/global?type=${metric}`
         : `/api/leaderboard/friends?userId=${userId}&type=${metric}`;
       
-      const res = await fetch(endpoint);
+      const res = await fetch(endpoint, {credentials: "include"});
       const data = await res.json();
       setLeaderboard(data);
     } catch (err) {

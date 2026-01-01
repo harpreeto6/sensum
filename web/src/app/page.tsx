@@ -79,7 +79,7 @@ export default function TodayPage() {
 
 
   async function loadStats() {
-      const res = await fetch("/api/stats/today", { cache: "no-store" });
+      const res = await fetch("/api/stats/today", { cache: "no-store", credentials: "include" });
       if (!res.ok) return;
       setStats(await res.json());
     }
@@ -90,6 +90,7 @@ export default function TodayPage() {
 
     const res = await fetch(`/api/quests/recommendations?path=${encodeURIComponent(selectedPath)}`, {
       cache: "no-store",
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -108,6 +109,7 @@ export default function TodayPage() {
     const res = await fetch("/api/quests/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         userId,
         questId: q.id,
@@ -159,6 +161,7 @@ export default function TodayPage() {
         <a className="underline" href="/achievements">Achievements</a>
         <a className="underline" href="/leaderboard">Leaderboard</a>
         <a className="underline" href="/buddy">Buddy</a>
+        <a className="underline" href="/settings">Settings</a>
       </header>
 
       {progress && (

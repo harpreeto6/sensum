@@ -6,6 +6,7 @@ import com.sensum.backend.achievement.AchievementService;
 import com.sensum.backend.achievement.Achievement;
 import com.sensum.backend.friends.FriendshipRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,13 +50,33 @@ public class QuestController {
 
     // POST /quests/complete
     @PostMapping("/complete")
-    public ResponseEntity<?> complete(@RequestBody CompleteRequest req) {
-        Quest q = questRepo.findById(req.questId).orElseThrow();
-        User u = userRepo.findById(req.userId).orElseThrow();
+    public ResponseEntity<?> complete(@RequestBody CompleteRequest req, HttpServletRequest httpReq) {
+        Long authUserId = (Long) httpReq.getAttribute("userId");
+        if (authUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (req.questId == null) {
+            throw new IllegalArgumentException("questId is required");
+        }
+
+        Quest q = questRepo.findById(req.questId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid questId"));
+
+        User u = userRepo.findById(authUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid userId"));
+
+        if (req.momentText != null && req.momentText.length() > 200) {
+            throw new IllegalArgumentException("momentText must be 200 characters or less");
+        }
+        
+        if (req.mood != null && req.mood.length() > 40) {
+            throw new IllegalArgumentException("mood is too long");
+        }
 
         // 1) insert completion row
         QuestCompletion c = new QuestCompletion();
-        c.setUserId(req.userId);
+        c.setUserId(authUserId);
         c.setQuestId(req.questId);
         c.setMood(req.mood);
         c.setMomentText(req.momentText);
@@ -81,14 +102,14 @@ public class QuestController {
 
         // 3) build stats for achievements
         Map<String, Integer> userStats = new HashMap<>();
-        userStats.put("questCount", (int) completionRepo.countByUserId(req.userId));
+        userStats.put("questCount", (int) completionRepo.countByUserId(authUserId));
         userStats.put("streak", u.streak);
         userStats.put("level", u.level);
-        long friendCount = friendshipRepo.countByUserIdAndStatus(req.userId, "accepted");
+        long friendCount = friendshipRepo.countByUserIdAndStatus(authUserId, "accepted");
         userStats.put("friendCount", (int) friendCount);
 
         // 4) unlock achievements
-        List<Achievement> newAchievements = achievementService.unlockAchievementsForUser(req.userId, userStats);
+        List<Achievement> newAchievements = achievementService.unlockAchievementsForUser(authUserId, userStats);
 
         // 5) build response
         Map<String, Object> response = new HashMap<>();

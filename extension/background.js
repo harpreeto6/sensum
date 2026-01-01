@@ -41,7 +41,8 @@ async function flushEvents() {
     const res = await fetch(EVENT_POST_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(batch)
+      body: JSON.stringify(batch),
+      credentials: "include"
     });
 
     console.log("flush:", res.status, res.url);

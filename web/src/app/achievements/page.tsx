@@ -34,10 +34,22 @@ export default function AchievementsPage() {
 
   const loadAchievements = async () => {
     try {
-      const res = await fetch(`/api/achievements/all?userId=${userId}`);
+      const res = await fetch(`/api/achievements/all?userId=${userId}`, {credentials: "include"});
+      
+      if (!res.ok) {
+        console.error('Failed to load achievements:', res.status);
+        return;
+      }
+      
       const data = await res.json();
-      setAchievements(data);
-      setUnlockedCount(data.filter((a: Achievement) => a.unlocked).length);
+      
+      // Make sure data is an array before setting
+      if (Array.isArray(data)) {
+        setAchievements(data);
+        setUnlockedCount(data.filter((a: Achievement) => a.unlocked).length);
+      } else {
+        console.error('Expected array, got:', data);
+      }
     } catch (err) {
       console.error('Failed to load achievements:', err);
     }

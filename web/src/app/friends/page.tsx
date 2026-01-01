@@ -61,6 +61,7 @@ export default function FriendsPage() {
   async function loadFriends(id: number) {
     const res = await fetch(`/api/friends?userId=${encodeURIComponent(String(id))}`, {
       cache: "no-store",
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -73,6 +74,7 @@ export default function FriendsPage() {
   async function loadFeed(id: number) {
     const res = await fetch(`/api/friends/feed?userId=${encodeURIComponent(String(id))}`, {
       cache: "no-store",
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -90,6 +92,7 @@ export default function FriendsPage() {
     const res = await fetch("/api/friends/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ userId }),
     });
 
@@ -139,7 +142,7 @@ export default function FriendsPage() {
 
     const res = await fetch(
       `/api/friends/${friendId}?userId=${encodeURIComponent(String(userId))}`,
-      { method: "DELETE" }
+      { method: "DELETE", credentials: "include" }
     );
 
     if (!res.ok) {

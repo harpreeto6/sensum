@@ -35,7 +35,7 @@ export default function BuddyPage() {
 
   const loadFriends = async () => {
     try {
-      const res = await fetch(`/api/friends?userId=${userId}`);
+      const res = await fetch(`/api/friends?userId=${userId}`, { credentials: "include" });
       const data = await res.json();
       setFriends(data);
     } catch (err) {
@@ -45,7 +45,7 @@ export default function BuddyPage() {
 
   const loadSessions = async () => {
     try {
-      const res = await fetch(`/api/buddy/list?userId=${userId}`);
+      const res = await fetch(`/api/buddy/list?userId=${userId}`, { credentials: "include" });
       const data = await res.json();
       setSessions(data);
     } catch (err) {
@@ -64,6 +64,7 @@ export default function BuddyPage() {
       const res = await fetch('/api/buddy/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({
           userId,
           friendId: selectedFriend,
@@ -89,6 +90,7 @@ export default function BuddyPage() {
       const res = await fetch('/api/buddy/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({ sessionId, userId }),
       });
 
@@ -105,6 +107,7 @@ export default function BuddyPage() {
       const res = await fetch('/api/buddy/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({
           sessionId,
           userId,
@@ -126,6 +129,7 @@ export default function BuddyPage() {
       const res = await fetch('/api/buddy/end', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({ sessionId, userId }),
       });
 
@@ -141,7 +145,7 @@ export default function BuddyPage() {
 
   const loadSessionDetails = async (sessionId: number) => {
     try {
-      const res = await fetch(`/api/buddy/session/${sessionId}`);
+      const res = await fetch(`/api/buddy/session/${sessionId}`, { credentials: "include" });
       const data = await res.json();
       setSessionDetails(data);
     } catch (err) {

@@ -7,7 +7,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/achievements")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+//@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AchievementController {
 
     @Autowired

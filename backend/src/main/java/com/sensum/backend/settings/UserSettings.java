@@ -27,4 +27,7 @@ public class UserSettings {
 
     @Column(name = "share_moments", nullable = false)
     public boolean shareMoments = false;
+
+    @Column(name = "tracked_domains", nullable = false)
+    public String trackedDomains = "[]";
 }

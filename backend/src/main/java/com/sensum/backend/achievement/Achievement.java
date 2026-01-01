@@ -7,6 +7,12 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "achievements")
+/**
+ * Definition of an achievement (badge) that can be earned.
+ *
+ * <p>The {@link #trigger} field stores a small JSON expression describing what is required to
+ * unlock it (for example: quest_count >= N).
+ */
 public class Achievement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

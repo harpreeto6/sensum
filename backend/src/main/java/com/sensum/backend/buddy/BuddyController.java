@@ -11,9 +11,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/buddy")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
+/**
+ * Accountability buddy endpoints for starting and managing a focused session with a friend.
+ *
+ * <p>Sessions are persisted via {@link BuddySessionRepository} and status updates are stored as
+ * {@link BuddyCheckin} rows.
+ *
+ * <h2>Authentication</h2>
+ * Requires the JWT cookie; requests are authorized by verifying that the requested user id
+ * matches the authenticated user id set by {@link com.sensum.backend.security.JwtAuthenticationFilter}.
+ */
 public class BuddyController {
 
     @Autowired
@@ -51,7 +63,21 @@ public class BuddyController {
 
     // POST /buddy/start - User A creates a session
     @PostMapping("/start")
-    public ResponseEntity<?> startSession(@RequestBody StartSessionRequest req) {
+    /**
+     * Creates a new buddy session between user A and user B.
+     */
+    public ResponseEntity<?> startSession(@RequestBody StartSessionRequest req, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (req == null || req.userId == null || req.friendId == null) {
+            throw new IllegalArgumentException("userId and friendId are required");
+        }
+        if (!authedUserId.equals(req.userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
         if (!userRepository.existsById(req.userId) || !userRepository.existsById(req.friendId)) {
             return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
         }
@@ -70,7 +96,21 @@ public class BuddyController {
 
     // POST /buddy/join - User B joins, session becomes active
     @PostMapping("/join")
-    public ResponseEntity<?> joinSession(@RequestBody JoinSessionRequest req) {
+    /**
+     * Marks a session active when one of its participants joins.
+     */
+    public ResponseEntity<?> joinSession(@RequestBody JoinSessionRequest req, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (req == null || req.userId == null || req.sessionId == null) {
+            throw new IllegalArgumentException("userId and sessionId are required");
+        }
+        if (!authedUserId.equals(req.userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
         Optional<BuddySession> optSession = sessionRepository.findById(req.sessionId);
         if (optSession.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -99,10 +139,29 @@ public class BuddyController {
 
     // POST /buddy/checkin - Record a status update
     @PostMapping("/checkin")
-    public ResponseEntity<?> checkin(@RequestBody CheckinRequest req) {
+    /**
+     * Records a check-in status for a session.
+     */
+    public ResponseEntity<?> checkin(@RequestBody CheckinRequest req, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (req == null || req.userId == null || req.sessionId == null || req.status == null) {
+            throw new IllegalArgumentException("sessionId, userId, and status are required");
+        }
+        if (!authedUserId.equals(req.userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
         Optional<BuddySession> optSession = sessionRepository.findById(req.sessionId);
         if (optSession.isEmpty()) {
             return ResponseEntity.notFound().build();
+        }
+
+        BuddySession session = optSession.get();
+        if (!session.getUserAId().equals(req.userId) && !session.getUserBId().equals(req.userId)) {
+            return ResponseEntity.status(403).build();
         }
 
         BuddyCheckin checkin = new BuddyCheckin(req.sessionId, req.userId, req.status);
@@ -117,7 +176,17 @@ public class BuddyController {
 
     // GET /buddy/list?userId=1 - Get all sessions for a user
     @GetMapping("/list")
-    public ResponseEntity<?> listSessions(@RequestParam Long userId) {
+    /**
+     * Lists sessions for the authenticated user.
+     */
+    public ResponseEntity<?> listSessions(@RequestParam Long userId, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (!authedUserId.equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
         List<BuddySession> sessions = sessionRepository.findByUserId(userId);
 
         List<Map<String, Object>> result = sessions.stream().map(session -> {
@@ -153,13 +222,23 @@ public class BuddyController {
 
     // GET /buddy/session/{id} - Get session with all check-ins
     @GetMapping("/session/{id}")
-    public ResponseEntity<?> getSession(@PathVariable Long id) {
+    /**
+     * Returns a session plus its check-ins.
+     */
+    public ResponseEntity<?> getSession(@PathVariable Long id, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
         Optional<BuddySession> optSession = sessionRepository.findById(id);
         if (optSession.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         BuddySession session = optSession.get();
+        if (!session.getUserAId().equals(authedUserId) && !session.getUserBId().equals(authedUserId)) {
+            return ResponseEntity.status(403).build();
+        }
         List<BuddyCheckin> checkins = checkinRepository.findBySessionId(id);
 
         Map<String, Object> result = new HashMap<>();
@@ -182,13 +261,30 @@ public class BuddyController {
 
     // POST /buddy/end - Mark session as completed
     @PostMapping("/end")
-    public ResponseEntity<?> endSession(@RequestBody EndSessionRequest req) {
+    /**
+     * Marks a session completed.
+     */
+    public ResponseEntity<?> endSession(@RequestBody EndSessionRequest req, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (req == null || req.userId == null || req.sessionId == null) {
+            throw new IllegalArgumentException("sessionId and userId are required");
+        }
+        if (!authedUserId.equals(req.userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
         Optional<BuddySession> optSession = sessionRepository.findById(req.sessionId);
         if (optSession.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         BuddySession session = optSession.get();
+        if (!session.getUserAId().equals(req.userId) && !session.getUserBId().equals(req.userId)) {
+            return ResponseEntity.status(403).build();
+        }
         session.setStatus("completed");
         session.setEndedAt(Instant.now());
         sessionRepository.save(session);

@@ -5,6 +5,9 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "user_achievements")
+/**
+ * Join table recording that a user has unlocked a specific {@link Achievement}.
+ */
 public class UserAchievement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

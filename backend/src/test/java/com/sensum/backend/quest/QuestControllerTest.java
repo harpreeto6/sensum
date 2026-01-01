@@ -48,6 +48,9 @@ class QuestControllerTest {
     QuestCompletionRepository completionRepo;
 
     @MockitoBean
+    QuestOutcomeRepository outcomeRepo;
+
+    @MockitoBean
     AchievementService achievementService;
 
     @MockitoBean

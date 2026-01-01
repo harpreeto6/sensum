@@ -5,6 +5,12 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "invites")
+/**
+ * One-time invite code used to create a friendship.
+ *
+ * <p>An invite is created by an inviter and can be redeemed once by another user before it
+ * expires. After redemption, {@link #usedAt} is set.
+ */
 public class Invite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -10,6 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
+/**
+ * Returns the authenticated user's profile.
+ *
+ * <p>This endpoint is used by the web app to hydrate the current session: basic user fields
+ * (id, email, XP/level/streak) plus the user's {@link UserSettings}.
+ *
+ * <p>If the settings row does not yet exist, this controller creates it with defaults.
+ */
 public class MeProfileController {
 
     private final UserRepository userRepo;
@@ -20,6 +28,11 @@ public class MeProfileController {
         this.settingsRepo = settingsRepo;
     }
 
+    /**
+     * Returns the current user's profile and settings.
+     *
+     * @return HTTP 200 with profile data; HTTP 401 if unauthenticated
+     */
     @GetMapping("/me")
     public ResponseEntity<?> me(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");

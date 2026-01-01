@@ -5,6 +5,12 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "events")
+/**
+ * Persisted telemetry event.
+ *
+ * <p>Events are ingested from clients via {@link EventsController} and stored for later
+ * aggregation (stats dashboards, analytics, nudges effectiveness).
+ */
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

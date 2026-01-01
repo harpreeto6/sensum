@@ -5,6 +5,12 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "buddy_sessions")
+/**
+ * A two-person accountability session.
+ *
+ * <p>Sessions are created as "pending" until a participant joins, then become "active", and
+ * finally "completed".
+ */
 public class BuddySession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

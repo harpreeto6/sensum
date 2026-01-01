@@ -5,6 +5,13 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
+/**
+ * Service for reading and unlocking achievements.
+ *
+ * <p>Achievements are evaluated using a small set of user stats (quest count, streak, etc.).
+ * The unlock operation is idempotent: if a user already has a given achievement, the method
+ * skips it.
+ */
 public class AchievementService {
 
     @Autowired
@@ -14,8 +21,14 @@ public class AchievementService {
     private UserAchievementRepository userAchievementRepository;
 
     /**
-     * Check and unlock achievements for a user
-     * Returns list of newly unlocked achievements
+        * Checks all defined achievements and unlocks those the user newly qualifies for.
+        *
+        * <p>Callers provide the current user stats snapshot. The method persists any newly unlocked
+        * {@link UserAchievement} records and returns the corresponding {@link Achievement}s.
+        *
+        * @param userId id of the user being evaluated
+        * @param userStats map of stat keys to values (e.g. questCount, streak, level, friendCount)
+        * @return list of achievements newly unlocked during this call
      */
     public List<Achievement> unlockAchievementsForUser(Long userId, Map<String, Integer> userStats) {
         List<Achievement> newAchievements = new ArrayList<>();
@@ -41,7 +54,10 @@ public class AchievementService {
     }
 
     /**
-     * Check if user's stats meet the achievement trigger
+        * Evaluates whether the given stats satisfy a stored trigger expression.
+        *
+        * <p>The trigger is currently stored as a small JSON string like:
+        * {@code {"type": "quest_count", "value": 3}}.
      */
     private boolean meetsTrigger(String triggerJson, Map<String, Integer> userStats) {
         try {
@@ -69,6 +85,12 @@ public class AchievementService {
         }
     }
 
+    /**
+     * Extracts a simple value from a small JSON object string.
+     *
+     * <p>This is intentionally lightweight (no JSON parser dependency here). It is not a general
+     * JSON parser and assumes the known trigger format.
+     */
     private String extractJsonValue(String json, String key) {
         String searchStr = "\"" + key + "\":";
         int start = json.indexOf(searchStr);
@@ -83,7 +105,7 @@ public class AchievementService {
     }
 
     /**
-     * Get all achievements a user has unlocked
+        * Returns achievements unlocked by the user.
      */
     public List<Map<String, Object>> getUserAchievements(Long userId) {
         List<UserAchievement> userAchievements = userAchievementRepository.findByUserId(userId);
@@ -107,7 +129,7 @@ public class AchievementService {
     }
 
     /**
-     * Get all achievements (for checking which ones are locked)
+        * Returns all achievements and a boolean flag indicating whether the user has unlocked each.
      */
     public List<Map<String, Object>> getAllAchievements(Long userId) {
         List<Achievement> all = achievementRepository.findAll();

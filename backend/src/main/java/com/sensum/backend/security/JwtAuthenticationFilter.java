@@ -17,12 +17,34 @@ import java.io.IOException;
 import java.util.Collections;
 
 @Component
+/**
+ * Spring Security filter that authenticates requests using the Sensum JWT cookie.
+ *
+ * <p>Behavior:
+ * <ol>
+ *   <li>Reads the JWT from the {@link #COOKIE_NAME} cookie.</li>
+ *   <li>Validates the token via {@link JwtUtil#validateToken(String)}.</li>
+ *   <li>If valid, sets an {@link org.springframework.security.core.Authentication} in the
+ *       {@link SecurityContextHolder}.</li>
+ *   <li>Also attaches {@code userId} to {@link HttpServletRequest} attributes for controller code
+ *       that prefers request-scoped access.</li>
+ * </ol>
+ *
+ * <p>If the token is missing, invalid, or expired, the request continues unauthenticated.
+ * Authorization is enforced later by Spring Security configuration.
+ */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Cookie name we’ll set on login/signup
     public static final String COOKIE_NAME = "sensum_token";
 
     @Override
+    /**
+     * Attempts to authenticate the current request based on the JWT cookie.
+     *
+     * <p>This filter is intentionally permissive: it never directly returns 401; it only
+     * establishes authentication when possible.
+     */
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {

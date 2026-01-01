@@ -8,6 +8,14 @@ import java.time.Instant;
     name = "friendships",
     uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "friend_id"})
 )
+/**
+ * Directional friendship edge.
+ *
+ * <p>Friendships are modeled as two rows (A -> B and B -> A) to allow symmetrical operations
+ * and efficient queries per-user.
+ *
+ * <p>Status is a small string enum (current values in code: accepted, blocked).
+ */
 public class Friendship {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

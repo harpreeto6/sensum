@@ -4,6 +4,13 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "user_settings")
+/**
+ * Per-user configurable settings.
+ *
+ * <p>Currently stored as a single row per user.
+ * Some fields (like {@link #selectedPaths} and {@link #trackedDomains}) are stored as JSON strings
+ * for simplicity.
+ */
 public class UserSettings {
 
     @Id

@@ -77,14 +77,71 @@ function showNudge({ domain }) {
   row2.style.gap = "8px";
   row2.style.marginTop = "10px";
 
-  const snoozeBtn = createButton("Snooze 15 min");
-  const disableBtn = createButton("Disable on this site");
-  snoozeBtn.style.flex = "1";
-  disableBtn.style.flex = "1";
+  // Snooze dropdown
+  const snoozeContainer = document.createElement("div");
+  snoozeContainer.style.flex = "1";
+  snoozeContainer.style.position = "relative";
+  
+  const snoozeBtn = createButton("Snooze ▼");
+  snoozeBtn.style.width = "100%";
   snoozeBtn.style.fontSize = "12px";
+  
+  const snoozeMenu = document.createElement("div");
+  snoozeMenu.style.display = "none";
+  snoozeMenu.style.position = "absolute";
+  snoozeMenu.style.bottom = "100%";
+  snoozeMenu.style.left = "0";
+  snoozeMenu.style.right = "0";
+  snoozeMenu.style.background = "rgba(30, 30, 30, 0.95)";
+  snoozeMenu.style.border = "1px solid rgba(255,255,255,0.25)";
+  snoozeMenu.style.borderRadius = "10px";
+  snoozeMenu.style.marginBottom = "4px";
+  snoozeMenu.style.overflow = "hidden";
+  
+  const snoozeOptions = [
+    { label: "15 minutes", minutes: 15 },
+    { label: "30 minutes", minutes: 30 },
+    { label: "60 minutes", minutes: 60 }
+  ];
+  
+  snoozeOptions.forEach(opt => {
+    const optBtn = document.createElement("button");
+    optBtn.textContent = opt.label;
+    optBtn.style.display = "block";
+    optBtn.style.width = "100%";
+    optBtn.style.padding = "8px";
+    optBtn.style.border = "none";
+    optBtn.style.background = "transparent";
+    optBtn.style.color = "inherit";
+    optBtn.style.cursor = "pointer";
+    optBtn.style.fontSize = "12px";
+    optBtn.style.textAlign = "left";
+    optBtn.addEventListener("mouseover", () => {
+      optBtn.style.background = "rgba(255,255,255,0.1)";
+    });
+    optBtn.addEventListener("mouseout", () => {
+      optBtn.style.background = "transparent";
+    });
+    optBtn.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ type: "SNOOZE_DOMAIN", domain, minutes: opt.minutes });
+      removeOverlay();
+    });
+    snoozeMenu.appendChild(optBtn);
+  });
+  
+  snoozeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    snoozeMenu.style.display = snoozeMenu.style.display === "none" ? "block" : "none";
+  });
+  
+  snoozeContainer.appendChild(snoozeBtn);
+  snoozeContainer.appendChild(snoozeMenu);
+
+  const disableBtn = createButton("Disable on this site");
+  disableBtn.style.flex = "1";
   disableBtn.style.fontSize = "12px";
 
-  row2.appendChild(snoozeBtn);
+  row2.appendChild(snoozeContainer);
   row2.appendChild(disableBtn);
 
     function safeSend(msg) {
@@ -105,24 +162,28 @@ function showNudge({ domain }) {
     });
 
   growBtn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "OPEN_SENSUM", mode: "grow", domain });
+    const ok = safeSend({ type: "OPEN_SENSUM", mode: "grow", domain });
+    if (!ok) window.open("http://localhost:3000/?mode=grow", "_blank");
     removeOverlay();
   });
 
   connectBtn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "OPEN_SENSUM", mode: "connect", domain });
-    removeOverlay();
-  });
-
-  snoozeBtn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "SNOOZE_DOMAIN", domain, minutes: 15 });
+    const ok = safeSend({ type: "OPEN_SENSUM", mode: "connect", domain });
+    if (!ok) window.open("http://localhost:3000/?mode=connect", "_blank");
     removeOverlay();
   });
 
   disableBtn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "DISABLE_DOMAIN", domain });
-    removeOverlay();
+    if (confirm(`Stop tracking time on ${domain}? You can re-enable it in the extension settings.`)) {
+      chrome.runtime.sendMessage({ type: "DISABLE_DOMAIN", domain });
+      removeOverlay();
+    }
   });
+  
+  // Close snooze menu when clicking outside
+  document.addEventListener("click", () => {
+    if (snoozeMenu) snoozeMenu.style.display = "none";
+  }, { once: true });
 
   container.appendChild(title);
   container.appendChild(subtitle);

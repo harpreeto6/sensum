@@ -6,6 +6,19 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/me/settings")
+/**
+ * Endpoints for the authenticated user's settings.
+ *
+ * <p>This controller persists a per-user {@link UserSettings} row and supports:
+ * <ul>
+ *   <li>Reading settings (creates defaults if missing)</li>
+ *   <li>Partial updates (only provided fields change)</li>
+ * </ul>
+ *
+ * <h2>Authentication</h2>
+ * Requires the JWT cookie; the user id is read from the request attribute set by
+ * {@link com.sensum.backend.security.JwtAuthenticationFilter}.
+ */
 public class MeSettingsController {
 
     private final UserSettingsRepository settingsRepo;
@@ -34,6 +47,11 @@ public class MeSettingsController {
         public Boolean shareMoments;
     }
 
+    /**
+     * Fetches the caller's settings, creating a default row when none exists.
+     *
+     * @return HTTP 200 with current settings; HTTP 401 if unauthenticated
+     */
     @GetMapping
     public ResponseEntity<?> getSettings(HttpServletRequest req) {
         Long userId = (Long) req.getAttribute("userId");
@@ -58,6 +76,14 @@ public class MeSettingsController {
         ));
     }
 
+    /**
+     * Partially updates the caller's settings.
+     *
+     * <p>Only fields present in the request body are updated. Other fields retain their existing
+     * values.
+     *
+     * @return HTTP 200 with updated settings; HTTP 401 if unauthenticated
+     */
     @PutMapping
     public ResponseEntity<?> updateSettings(@RequestBody UpdateSettingsRequest body, HttpServletRequest req) {
         Long userId = (Long) req.getAttribute("userId");

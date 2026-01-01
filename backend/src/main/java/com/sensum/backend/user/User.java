@@ -6,6 +6,16 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "users")
+/**
+ * Core user account record.
+ *
+ * <p>This entity represents an authenticated person in the system.
+ * It contains identity fields (email + password hash) and lightweight progression fields used
+ * for gamification (XP/level/streak).
+ *
+ * <p><b>Security:</b> {@link #passwordHash} stores a one-way password hash produced by
+ * {@link org.springframework.security.crypto.password.PasswordEncoder}.
+ */
 public class User {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;

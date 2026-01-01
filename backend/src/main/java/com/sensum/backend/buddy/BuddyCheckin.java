@@ -5,6 +5,9 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "buddy_checkins")
+/**
+ * A single status update for a {@link BuddySession}.
+ */
 public class BuddyCheckin {
     
     @Id

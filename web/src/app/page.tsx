@@ -144,11 +144,34 @@ export default function TodayPage() {
     localStorage.setItem("moments", JSON.stringify(prev.slice(0, 50)));
 
     setMomentText("");
-    setMsg(`Nice. +${data.gainedXp} XP`);
+    setMsg(`✨ Nice work! +${data.gainedXp} XP earned`);
+    setTimeout(() => setMsg(""), 3000);
     await loadQuests(path);
 
     await loadStats();
 
+  }
+
+  async function handleSkip(questId: number) {
+    try {
+      const res = await fetch("/api/quests/skip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questId }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        setMsg("❌ Couldn't skip that quest. Please try again.");
+        return;
+      }
+
+      setMsg("✓ Noted! Sensum will show this quest less often.");
+      setTimeout(() => setMsg(""), 3000);
+      void loadQuests(path);
+    } catch (err) {
+      setMsg("❌ Connection issue. Check your internet and try again.");
+    }
   }
 
   return (
@@ -157,11 +180,13 @@ export default function TodayPage() {
         <h1 className="text-2xl font-bold">Sensum — Today</h1>
         <a className="underline" href="/moments">Moments</a>
         <a className="underline" href="/profile">Profile</a>
+        <a className="underline" href="/stats">Stats</a>
         <a className="underline" href="/friends">Friends</a>
         <a className="underline" href="/achievements">Achievements</a>
         <a className="underline" href="/leaderboard">Leaderboard</a>
         <a className="underline" href="/buddy">Buddy</a>
         <a className="underline" href="/settings">Settings</a>
+        
       </header>
 
       {progress && (
@@ -212,11 +237,23 @@ export default function TodayPage() {
       </section>
 
       <section className="space-y-2">
-        <button className="border px-4 py-2 rounded" onClick={() => loadQuests()}>
-          Get 3 quests
+        <button 
+          className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => loadQuests()}
+          disabled={quests.length > 0}
+        >
+          {quests.length > 0 ? "✓ Quests loaded" : "Get 3 quests"}
         </button>
 
-        {msg && <p>{msg}</p>}
+        {msg && (
+          <div className={`p-3 rounded-lg ${
+            msg.includes("Nice") || msg.includes("Noted") || msg.includes("✓") || msg.includes("✨")
+              ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-900 dark:text-green-100"
+              : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-900 dark:text-red-100"
+          }`}>
+            {msg}
+          </div>
+        )}
       </section>
 
       <section className="space-y-2">
@@ -230,16 +267,41 @@ export default function TodayPage() {
       </section>
 
       <section className="space-y-3">
-        {quests.map((q) => (
-          <div key={q.id} className="border rounded p-3">
-            <p className="font-semibold">{q.title}</p>
-            <p className="text-sm opacity-80">{q.prompt}</p>
-            <p className="text-sm mt-1">~ {q.durationSec}s • {q.category}</p>
-            <button className="border px-3 py-1 rounded mt-2" onClick={() => completeQuest(q)}>
-              Complete
-            </button>
+        {quests.length === 0 ? (
+          <div className="border rounded-lg p-8 text-center bg-gray-50 dark:bg-gray-900">
+            <p className="text-lg font-semibold mb-2">Ready for a tiny quest?</p>
+            <p className="text-sm opacity-70 mb-4">
+              Pick a path and mood above, then click "Get 3 quests" to see personalized suggestions.
+            </p>
+            <p className="text-xs opacity-60">
+              💡 Tip: Sensum learns what you like. Complete quests you enjoy, skip the rest!
+            </p>
           </div>
-        ))}
+        ) : (
+          quests.map((q) => (
+            <div key={q.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <p className="font-semibold text-lg">{q.title}</p>
+              <p className="text-sm opacity-80 mt-1">{q.prompt}</p>
+              <p className="text-xs mt-2 opacity-60">
+                ⏱️ ~{Math.floor(q.durationSec / 60)} min · {q.category}
+              </p>
+              <div className="flex gap-2 mt-3">
+                <button 
+                  className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                  onClick={() => completeQuest(q)}
+                >
+                  ✓ Complete
+                </button>
+                <button 
+                  className="flex-1 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  onClick={() => handleSkip(q.id)}
+                >
+                  Not interested
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </section>
 
       {showAchievementModal && (

@@ -12,6 +12,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+/**
+ * Computes leaderboard views for different metrics.
+ *
+ * <p>Ranking is performed by sorting user records by the selected metric.
+ * For {@code quest_count}, the service computes per-user counts using
+ * {@link QuestCompletionRepository}.
+ *
+ * <p>Most methods return a list of maps for convenient JSON serialization.
+ */
 public class LeaderboardService {
 
     @Autowired
@@ -24,7 +33,9 @@ public class LeaderboardService {
     private QuestCompletionRepository questCompletionRepository;
 
     /**
-     * Get global leaderboard (all users)
+     * Returns a global leaderboard across all users.
+     *
+     * @param type supported values: xp, streak, level, quest_count
      */
     public List<Map<String, Object>> getGlobalLeaderboard(String type) {
         List<User> users = userRepository.findAll();
@@ -32,7 +43,7 @@ public class LeaderboardService {
     }
 
     /**
-     * Get friends-only leaderboard
+        * Returns a leaderboard scoped to accepted friends (plus self).
      */
     public List<Map<String, Object>> getFriendsLeaderboard(Long userId, String type) {
         // Get all friend IDs
@@ -51,7 +62,7 @@ public class LeaderboardService {
     }
 
     /**
-     * Get specific user's rank
+        * Computes a specific user's rank by building a global ranking.
      */
     public Map<String, Object> getUserRank(Long userId, String type) {
         List<User> allUsers = userRepository.findAll();
@@ -72,7 +83,9 @@ public class LeaderboardService {
     }
 
     /**
-     * Rank users by metric and return as list
+        * Ranks users by a selected metric.
+        *
+        * <p>Limits to the top 20 results.
      */
     private List<Map<String, Object>> rankUsers(List<User> users, String type) {
         // Sort users by the specified metric

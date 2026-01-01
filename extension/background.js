@@ -8,15 +8,21 @@ const FLUSH_INTERVAL_SEC = 60;
 let pendingEvents = [];
 
 const DEFAULT_THRESHOLD_SEC = 8 * 60;
+const COOLDOWN_SEC = 20 * 60; // 20 minutes cooldown after nudge
 const TICK_SEC = 5;
 let disabledDomains = [];
 let snoozeUntilByDomain = {};
+let lastNudgeByDomain = {}; // Track when we last nudged each domain
 
 let thresholdSec = DEFAULT_THRESHOLD_SEC;
 
-// “1 timer, 1 domain at a time”
+// "1 timer, 1 domain at a time"
 let activeDomain = null;
 let activeDomainSec = 0;
+
+// Retry logic
+let retryCount = 0;
+const MAX_RETRIES = 5;
 
 //helper to push events
 
@@ -50,15 +56,28 @@ async function flushEvents() {
     if (!res.ok) {
       // Put back so we can retry later
       pendingEvents = batch.concat(pendingEvents);
-      console.warn("Event flush failed:", res.status);
+      retryCount++;
+      console.warn("Event flush failed:", res.status, "retry", retryCount);
+      
+      // Limit queue size to prevent memory issues
+      if (pendingEvents.length > 100) {
+        pendingEvents = pendingEvents.slice(-100); // Keep last 100
+      }
       return;
     }
 
     const data = await res.json().catch(() => null);
     console.log("Event flush ok:", data ?? "(no json)");
+    retryCount = 0; // Reset on success
   } catch (err) {
     pendingEvents = batch.concat(pendingEvents);
-    console.warn("Event flush error:", err);
+    retryCount++;
+    console.warn("Event flush error:", err, "retry", retryCount);
+    
+    // Limit queue size
+    if (pendingEvents.length > 100) {
+      pendingEvents = pendingEvents.slice(-100);
+    }
   }
 }
 
@@ -84,12 +103,15 @@ async function loadThreshold() {
 }
 
 async function loadNudgeSettings() {
-  const data = await chrome.storage.sync.get(["disabledDomains", "snoozeUntilByDomain"]);
+  const data = await chrome.storage.sync.get(["disabledDomains", "snoozeUntilByDomain", "lastNudgeByDomain"]);
   disabledDomains = Array.isArray(data.disabledDomains) ? data.disabledDomains : [];
   snoozeUntilByDomain = data.snoozeUntilByDomain && typeof data.snoozeUntilByDomain === "object"
     ? data.snoozeUntilByDomain
     : {};
-  console.log("Nudge settings loaded", { disabledDomains, snoozeUntilByDomain });
+  lastNudgeByDomain = data.lastNudgeByDomain && typeof data.lastNudgeByDomain === "object"
+    ? data.lastNudgeByDomain
+    : {};
+  console.log("Nudge settings loaded", { disabledDomains, snoozeUntilByDomain, lastNudgeByDomain });
 }
 
 loadNudgeSettings();
@@ -121,7 +143,19 @@ async function tick() {
         activeDomainSec = 0;
         return;
     }
-
+    // Gate 3: cooldown => don't nudge if we recently showed one
+    const lastNudge = Number(lastNudgeByDomain[hostname] || 0);
+    const cooldownUntil = lastNudge + (COOLDOWN_SEC * 1000);
+    if (Date.now() < cooldownUntil) {
+        // Still in cooldown, keep tracking but don't nudge yet
+        if (activeDomain !== hostname) {
+            activeDomain = hostname;
+            activeDomainSec = 0;
+        }
+        activeDomainSec += TICK_SEC;
+        enqueueEvent("time_spent", activeDomain, TICK_SEC);
+        return;
+    }
     // Normalize to base tracked suffix (optional); simplest is keep hostname
     if (activeDomain !== hostname) {
         activeDomain = hostname;
@@ -129,14 +163,18 @@ async function tick() {
     }
 
     activeDomainSec += TICK_SEC;
-    enqueueEvent("tick", activeDomain, TICK_SEC);
+    enqueueEvent("time_spent", activeDomain, TICK_SEC);
     console.log("Tracking", activeDomain, activeDomainSec, "/", thresholdSec);
 
     if (activeDomainSec >= thresholdSec) {
-        enqueueEvent("nudge", activeDomain, 0);
+        enqueueEvent("nudge_shown", activeDomain, 0);
         console.log("Nudge threshold hit for", activeDomain);
 
-        // Tell content script to show overlay (Step 4 will implement actual UI)
+        // Save the timestamp when we showed this nudge
+        lastNudgeByDomain[hostname] = Date.now();
+        chrome.storage.sync.set({ lastNudgeByDomain });
+
+        // Tell content script to show overlay
         chrome.tabs.sendMessage(
             tab.id,
             { type: "SHOW_NUDGE", domain: activeDomain },
@@ -147,7 +185,7 @@ async function tick() {
             }
         );
 
-        // For MVP: reset after nudge
+        // Reset after nudge
         activeDomainSec = 0;
     }
 }
@@ -185,6 +223,10 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (!msg || !msg.type) return;
 
   if (msg.type === "OPEN_SENSUM") {
+    const domain = msg.domain;
+    if (domain) {
+      enqueueEvent("nudge_clicked", domain, 0);
+    }
     const mode = encodeURIComponent(msg.mode || "reset");
     const url = `http://localhost:3000/?mode=${mode}`;
     chrome.tabs.create({ url });

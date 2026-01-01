@@ -40,6 +40,7 @@ export default function SettingsPage() {
   }, [settings]);
 
   const [domainInput, setDomainInput] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     void load();
@@ -85,11 +86,19 @@ export default function SettingsPage() {
 
   function removeDomain(domain: string) {
     if (!settings) return;
+    
+    const confirmed = window.confirm(
+      `Stop tracking time on ${domain}? You can always add it back later.`
+    );
+    
+    if (!confirmed) return;
+    
     setSettings({ ...settings, trackedDomains: JSON.stringify(trackedDomains.filter((d) => d !== domain)) });
   }
 
   async function save() {
     if (!settings) return;
+    setSaving(true);
     setMsg("");
 
     const res = await fetch("/api/me/settings", {
@@ -99,12 +108,15 @@ export default function SettingsPage() {
       body: JSON.stringify(settings),
     });
 
+    setSaving(false);
+
     if (!res.ok) {
-      setMsg("Save failed");
+      setMsg("❌ Couldn't save settings. Please try again.");
       return;
     }
 
-    setMsg("Saved!");
+    setMsg("✓ Settings saved! Changes will apply immediately.");
+    setTimeout(() => setMsg(""), 3000);
     setSettings(await res.json());
   }
 
@@ -118,7 +130,15 @@ export default function SettingsPage() {
         <a className="underline" href="/">Today</a>
       </header>
 
-      {msg && <p>{msg}</p>}
+      {msg && (
+        <div className={`p-3 rounded-lg ${
+          msg.includes("✓") || msg.includes("saved")
+            ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-900 dark:text-green-100"
+            : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-900 dark:text-red-100"
+        }`}>
+          {msg}
+        </div>
+      )}
 
       <section className="border rounded p-4 space-y-3">
         <h2 className="text-lg font-semibold">Paths</h2>
@@ -222,8 +242,12 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <button className="border px-4 py-2 rounded" onClick={save}>
-        Save settings
+      <button 
+        onClick={save}
+        disabled={saving}
+        className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+      >
+        {saving ? "Saving..." : "Save Settings"}
       </button>
     </main>
   );

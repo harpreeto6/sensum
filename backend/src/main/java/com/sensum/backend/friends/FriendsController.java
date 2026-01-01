@@ -16,8 +16,18 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
+
 @RestController
 @RequestMapping("/friends")
+/**
+ * Social graph endpoints: invites, friend list, blocking, and an activity feed.
+ *
+ * <p>This controller currently uses user ids supplied by the client for several endpoints.
+ * To prevent cross-user access, each endpoint verifies that the requested user id matches the
+ * authenticated user id from {@link com.sensum.backend.security.JwtAuthenticationFilter}.
+ */
 public class FriendsController {
 
     private final FriendshipRepository friendships;
@@ -55,7 +65,23 @@ public class FriendsController {
 
     // ---- 1) POST /friends/invite ----
     @PostMapping("/invite")
-    public InviteResponse invite(@RequestBody InviteRequest req) {
+    /**
+     * Creates a one-time invite code for the authenticated user.
+     *
+     * @return HTTP 200 with invite code + link; HTTP 401 if unauthenticated; HTTP 403 on user mismatch
+     */
+    public ResponseEntity<InviteResponse> invite(@RequestBody InviteRequest req, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (req == null || req.userId == null) {
+            throw new IllegalArgumentException("userId is required");
+        }
+        if (!authedUserId.equals(req.userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
         User inviter = users.findById(req.userId).orElseThrow();
 
         // generate code (retry a few times in case of collision)
@@ -76,12 +102,28 @@ public class FriendsController {
         invites.save(inv);
 
         String link = "http://localhost:3000/friends?code=" + code;
-        return new InviteResponse(code, link);
+        return ResponseEntity.ok(new InviteResponse(code, link));
     }
 
     // ---- 2) POST /friends/accept ----
     @PostMapping("/accept")
-    public String accept(@RequestBody AcceptRequest req) {
+    /**
+     * Accepts an invite code and creates an accepted friendship pair.
+     *
+     * @return HTTP 200 "ok"; HTTP 401 if unauthenticated; HTTP 403 on user mismatch
+     */
+    public ResponseEntity<String> accept(@RequestBody AcceptRequest req, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (req == null || req.userId == null || req.code == null || req.code.isBlank()) {
+            throw new IllegalArgumentException("userId and code are required");
+        }
+        if (!authedUserId.equals(req.userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
         User accepter = users.findById(req.userId).orElseThrow();
 
         Invite inv = invites.findByCode(req.code).orElseThrow(() -> new RuntimeException("Invalid code"));
@@ -96,12 +138,22 @@ public class FriendsController {
         inv.setUsedAt(Instant.now());
         invites.save(inv);
 
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
     // ---- 3) GET /friends?userId= ----
     @GetMapping
-    public List<FriendRow> list(@RequestParam Long userId) {
+    /**
+     * Lists friends for the authenticated user.
+     */
+    public ResponseEntity<List<FriendRow>> list(@RequestParam Long userId, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (!authedUserId.equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
         users.findById(userId).orElseThrow();
 
         List<Friendship> rows = friendships.findByUserId(userId);
@@ -112,29 +164,49 @@ public class FriendsController {
             out.add(new FriendRow(f.getFriendId(), friend == null ? "(deleted)" : friend.getEmail(), f.getStatus()));
         }
 
-        return out;
+        return ResponseEntity.ok(out);
     }
 
     // ---- 4) DELETE /friends/{friendId}?userId= ----
     @DeleteMapping("/{friendId}")
-    public String remove(@PathVariable Long friendId, @RequestParam Long userId) {
+    /**
+     * Removes a friendship pair.
+     */
+    public ResponseEntity<String> remove(@PathVariable Long friendId, @RequestParam Long userId, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (!authedUserId.equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
         users.findById(userId).orElseThrow();
 
         friendships.deletePair(userId, friendId);
         friendships.deletePair(friendId, userId);
 
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
     // ---- 5) POST /friends/{friendId}/block ----
     @PostMapping("/{friendId}/block")
-    public String block(@PathVariable Long friendId, @RequestParam Long userId) {
+    /**
+     * Blocks a user in both directions.
+     */
+    public ResponseEntity<String> block(@PathVariable Long friendId, @RequestParam Long userId, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (!authedUserId.equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
         users.findById(userId).orElseThrow();
         users.findById(friendId).orElseThrow();
 
         upsertFriendship(userId, friendId, "blocked");
         upsertFriendship(friendId, userId, "blocked");
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
     // ---- helpers ----
@@ -165,7 +237,19 @@ public class FriendsController {
 
 
     @GetMapping("/feed")
-    public List<FeedItem> feed(@RequestParam Long userId) {
+    /**
+     * Builds a small friend activity feed from recent quest completions.
+     *
+     * <p>Visibility is controlled by the friend's sharing flags in {@link UserSettings}.
+     */
+    public ResponseEntity<List<FeedItem>> feed(@RequestParam Long userId, HttpServletRequest request) {
+        Long authedUserId = (Long) request.getAttribute("userId");
+        if (authedUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (!authedUserId.equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
         users.findById(userId).orElseThrow();
 
         // 1) Get accepted friends
@@ -212,7 +296,7 @@ public class FriendsController {
 
         // 3) Sort by time desc and limit 10
         items.sort((a, b) -> b.at.compareTo(a.at));
-        return items.stream().limit(10).toList();
+        return ResponseEntity.ok(items.stream().limit(10).toList());
     }
 
     // DTO returned by /friends/feed

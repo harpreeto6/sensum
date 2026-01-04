@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface Achievement {
   id: number;
@@ -19,9 +19,9 @@ export default function AchievementsPage() {
   const [unlockedCount, setUnlockedCount] = useState(0);
 
   useEffect(() => {
-    const id = localStorage.getItem('userId');
+    const id = localStorage.getItem("userId");
     if (!id) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
     setUserId(Number(id));
@@ -37,7 +37,7 @@ export default function AchievementsPage() {
       const res = await fetch(`/api/achievements/all?userId=${userId}`, {credentials: "include"});
       
       if (!res.ok) {
-        console.error('Failed to load achievements:', res.status);
+        console.error("Failed to load achievements:", res.status);
         return;
       }
       
@@ -48,10 +48,10 @@ export default function AchievementsPage() {
         setAchievements(data);
         setUnlockedCount(data.filter((a: Achievement) => a.unlocked).length);
       } else {
-        console.error('Expected array, got:', data);
+        console.error("Expected array, got:", data);
       }
     } catch (err) {
-      console.error('Failed to load achievements:', err);
+      console.error("Failed to load achievements:", err);
     }
   };
 
@@ -61,60 +61,94 @@ export default function AchievementsPage() {
   const locked = achievements.filter((a) => !a.unlocked);
 
   return (
-    <div className="max-w-6xl mx-auto p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-4xl font-bold mb-2">Achievements</h1>
-      <p className="text-xl text-gray-600 mb-6">
-        {unlockedCount} / {achievements.length} earned
-      </p>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">S</div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Achievements</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {unlockedCount} / {achievements.length} earned
+              </p>
+            </div>
+          </div>
 
-      {/* Unlocked Achievements */}
-      {unlocked.length > 0 && (
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-4">🏆 Unlocked</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {unlocked.map((achievement) => (
-              <div
-                key={achievement.id}
-                className="bg-gradient-to-br from-yellow-100 to-orange-100 p-6 rounded-lg border-2 border-yellow-400 shadow-md"
-              >
-                <div className="text-5xl mb-3">{achievement.icon}</div>
-                <h3 className="text-xl font-bold mb-2">{achievement.name}</h3>
-                <p className="text-sm text-gray-700 mb-3">
-                  {achievement.description}
-                </p>
-                {achievement.unlockedAt && (
-                  <p className="text-xs text-gray-600">
-                    Earned on {new Date(achievement.unlockedAt).toLocaleDateString()}
-                  </p>
-                )}
+          <nav className="flex gap-3 text-sm">
+            <a className="nav-pill" href="/">Today</a>
+            <a className="nav-pill" href="/profile">Profile</a>
+          </nav>
+        </header>
+
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4">
+            {unlocked.length > 0 && (
+              <div className="card space-y-4">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Unlocked</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">🏆 Your wins</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {unlocked.map((achievement) => (
+                    <div
+                      key={achievement.id}
+                      className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-3xl">{achievement.icon}</div>
+                          <p className="mt-2 font-semibold text-slate-900 dark:text-slate-50">{achievement.name}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{achievement.description}</p>
+                        </div>
+                      </div>
+                      {achievement.unlockedAt && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                          Earned on {new Date(achievement.unlockedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
+
+            {locked.length > 0 && (
+              <div className="card space-y-4">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Locked</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">🔒 Next targets</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {locked.map((achievement) => (
+                    <div
+                      key={achievement.id}
+                      className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white/60 dark:bg-slate-800/50 opacity-80"
+                    >
+                      <div className="text-3xl grayscale">{achievement.icon}</div>
+                      <p className="mt-2 font-semibold text-slate-700 dark:text-slate-200">{achievement.name}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{achievement.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="card sticky top-6 space-y-3">
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
+              <nav className="flex flex-col gap-2">
+                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost text-left" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost text-left" href="/buddy">🤝 Buddy</a>
+                <a className="pill pill-ghost text-left" href="/settings">⚙️ Settings</a>
+              </nav>
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Locked Achievements */}
-      {locked.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4">🔒 Locked</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {locked.map((achievement) => (
-              <div
-                key={achievement.id}
-                className="bg-gray-200 p-6 rounded-lg border-2 border-gray-400 shadow-md opacity-60"
-              >
-                <div className="text-5xl mb-3 grayscale">{achievement.icon}</div>
-                <h3 className="text-xl font-bold mb-2 text-gray-600">
-                  {achievement.name}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {achievement.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+    </main>
   );
 }

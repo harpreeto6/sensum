@@ -19,9 +19,11 @@ export default function SettingsPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [domainInput, setDomainInput] = useState("");
 
   const selectedPaths = useMemo<string[]>(() => {
     try {
@@ -39,216 +41,334 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  const [domainInput, setDomainInput] = useState("");
-  const [saving, setSaving] = useState(false);
-
   useEffect(() => {
+    const id = localStorage.getItem("userId");
+    if (!id) {
+      router.push("/login");
+      return;
+    }
+
     void load();
-  }, []);
+  }, [router]);
 
   async function load() {
     setMsg("");
     setLoading(true);
 
-    const res = await fetch("/api/me/settings", { credentials: "include", cache: "no-store" });
-    if (res.status === 401 || res.status === 403) {
-      router.push("/login");
-      return;
-    }
-    if (!res.ok) {
-      setMsg("Failed to load settings");
-      setLoading(false);
-      return;
-    }
+    try {
+      const res = await fetch("/api/me/settings", {
+        cache: "no-store",
+        credentials: "include",
+      });
 
-    const data = (await res.json()) as Settings;
-    setSettings(data);
-    setLoading(false);
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      if (!res.ok) {
+        setMsg("Failed to load settings");
+        setSettings(null);
+        return;
+      }
+
+      const data: Settings = await res.json();
+      setSettings(data);
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+      setMsg("Failed to load settings");
+      setSettings(null);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function togglePath(p: (typeof PATHS)[number]) {
+  async function save() {
     if (!settings) return;
-    const next = new Set(selectedPaths);
-    if (next.has(p)) next.delete(p);
-    else next.add(p);
-    setSettings({ ...settings, selectedPaths: JSON.stringify(Array.from(next)) });
+    setMsg("");
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/me/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(settings),
+      });
+
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        setMsg(text || "Save failed");
+        return;
+      }
+
+      const data: Settings = await res.json();
+      setSettings(data);
+      setMsg("✓ Settings saved");
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+      setMsg("Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function togglePath(path: (typeof PATHS)[number]) {
+    if (!settings) return;
+    const next = selectedPaths.includes(path)
+      ? selectedPaths.filter((p) => p !== path)
+      : [...selectedPaths, path];
+    setSettings({ ...settings, selectedPaths: JSON.stringify(next) });
   }
 
   function addDomain() {
     if (!settings) return;
-    const value = domainInput.trim().toLowerCase();
-    if (!value) return;
-    if (trackedDomains.includes(value)) return;
+    const raw = domainInput.trim();
+    if (!raw) return;
 
-    setSettings({ ...settings, trackedDomains: JSON.stringify([value, ...trackedDomains]) });
+    if (trackedDomains.includes(raw)) {
+      setDomainInput("");
+      return;
+    }
+
+    setSettings({ ...settings, trackedDomains: JSON.stringify([...trackedDomains, raw]) });
     setDomainInput("");
   }
 
   function removeDomain(domain: string) {
     if (!settings) return;
-    
-    const confirmed = window.confirm(
-      `Stop tracking time on ${domain}? You can always add it back later.`
-    );
-    
-    if (!confirmed) return;
-    
-    setSettings({ ...settings, trackedDomains: JSON.stringify(trackedDomains.filter((d) => d !== domain)) });
-  }
-
-  async function save() {
-    if (!settings) return;
-    setSaving(true);
-    setMsg("");
-
-    const res = await fetch("/api/me/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(settings),
+    setSettings({
+      ...settings,
+      trackedDomains: JSON.stringify(trackedDomains.filter((d) => d !== domain)),
     });
-
-    setSaving(false);
-
-    if (!res.ok) {
-      setMsg("❌ Couldn't save settings. Please try again.");
-      return;
-    }
-
-    setMsg("✓ Settings saved! Changes will apply immediately.");
-    setTimeout(() => setMsg(""), 3000);
-    setSettings(await res.json());
   }
 
-  if (loading) return <main className="p-6">Loading…</main>;
-  if (!settings) return <main className="p-6">No settings.</main>;
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <div className="card">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Loading settings...</h1>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+        <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">S</div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Settings</h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Paths, nudges, sharing</p>
+              </div>
+            </div>
+
+            <nav className="flex gap-3 text-sm">
+              <a className="nav-pill" href="/">Today</a>
+              <a className="nav-pill" href="/profile">Profile</a>
+            </nav>
+          </header>
+
+          {msg && <div className="alert alert-error">{msg}</div>}
+
+          <div className="card space-y-3">
+            <p className="text-sm text-slate-600 dark:text-slate-300">Unable to load settings.</p>
+            <button className="btn-primary w-fit" onClick={load}>Retry</button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="p-6 space-y-6">
-      <header className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <a className="underline" href="/">Today</a>
-      </header>
-
-      {msg && (
-        <div className={`p-3 rounded-lg ${
-          msg.includes("✓") || msg.includes("saved")
-            ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-900 dark:text-green-100"
-            : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-900 dark:text-red-100"
-        }`}>
-          {msg}
-        </div>
-      )}
-
-      <section className="border rounded p-4 space-y-3">
-        <h2 className="text-lg font-semibold">Paths</h2>
-        <div className="flex gap-2 flex-wrap">
-          {PATHS.map((p) => (
-            <button
-              key={p}
-              className={`border rounded px-3 py-1 ${selectedPaths.includes(p) ? "font-bold" : ""}`}
-              onClick={() => togglePath(p)}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="border rounded p-4 space-y-3">
-        <h2 className="text-lg font-semibold">Sharing</h2>
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={settings.shareLevel}
-            onChange={(e) => setSettings({ ...settings, shareLevel: e.target.checked })}
-          />
-          Share level
-        </label>
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={settings.shareStreak}
-            onChange={(e) => setSettings({ ...settings, shareStreak: e.target.checked })}
-          />
-          Share streak
-        </label>
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={settings.shareCategories}
-            onChange={(e) => setSettings({ ...settings, shareCategories: e.target.checked })}
-          />
-          Share categories
-        </label>
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={settings.shareMoments}
-            onChange={(e) => setSettings({ ...settings, shareMoments: e.target.checked })}
-          />
-          Share moments
-        </label>
-      </section>
-
-      <section className="border rounded p-4 space-y-3">
-        <h2 className="text-lg font-semibold">Nudges</h2>
-
-        <label className="block">
-          Threshold (minutes)
-          <input
-            className="border rounded p-2 w-full max-w-sm block mt-1"
-            type="number"
-            min={1}
-            value={Math.round(settings.nudgeThresholdSec / 60)}
-            onChange={(e) =>
-              setSettings({ ...settings, nudgeThresholdSec: Number(e.target.value) * 60 })
-            }
-          />
-        </label>
-
-        <div className="space-y-2">
-          <p className="font-semibold">Tracked domains</p>
-
-          <div className="flex gap-2 flex-wrap items-center">
-            <input
-              className="border rounded p-2 w-full max-w-sm"
-              placeholder="e.g. youtube.com"
-              value={domainInput}
-              onChange={(e) => setDomainInput(e.target.value)}
-            />
-            <button className="border px-4 py-2 rounded" onClick={addDomain}>
-              Add
-            </button>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">S</div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Settings</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Paths, nudges, sharing</p>
+            </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap">
-            {trackedDomains.map((d) => (
+          <nav className="flex gap-3 text-sm">
+            <a className="nav-pill" href="/">Today</a>
+            <a className="nav-pill" href="/profile">Profile</a>
+          </nav>
+        </header>
+
+        {msg && (
+          <div
+            className={`alert ${
+              msg.includes("✓") || msg.toLowerCase().includes("saved")
+                ? "alert-success"
+                : "alert-error"
+            }`}
+          >
+            {msg}
+          </div>
+        )}
+
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4">
+            <div className="card space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Paths</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">What to focus on</h2>
+                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Pick 1–3</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {PATHS.map((p) => (
+                  <button
+                    key={p}
+                    className={`pill ${selectedPaths.includes(p) ? "pill-active" : "pill-ghost"}`}
+                    onClick={() => togglePath(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="card space-y-3">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Sharing</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">What friends can see</h2>
+              </div>
+              <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={settings.shareLevel}
+                  onChange={(e) => setSettings({ ...settings, shareLevel: e.target.checked })}
+                />
+                Share level
+              </label>
+              <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={settings.shareStreak}
+                  onChange={(e) => setSettings({ ...settings, shareStreak: e.target.checked })}
+                />
+                Share streak
+              </label>
+              <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={settings.shareCategories}
+                  onChange={(e) => setSettings({ ...settings, shareCategories: e.target.checked })}
+                />
+                Share categories
+              </label>
+              <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={settings.shareMoments}
+                  onChange={(e) => setSettings({ ...settings, shareMoments: e.target.checked })}
+                />
+                Share moments
+              </label>
+            </div>
+
+            <div className="card space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Nudges</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Frequency</h2>
+                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Tracked sites only</span>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                <span>Show a nudge every</span>
+                <input
+                  type="number"
+                  min={60}
+                  step={60}
+                  value={settings.nudgeThresholdSec}
+                  onChange={(e) => setSettings({ ...settings, nudgeThresholdSec: Number(e.target.value) })}
+                  className="input w-28"
+                />
+                <span>seconds on tracked sites</span>
+              </label>
+            </div>
+
+            <div className="card space-y-3">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Tracked sites</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Where to nudge</h2>
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                <input
+                  className="input flex-1"
+                  placeholder="e.g. reddit.com"
+                  value={domainInput}
+                  onChange={(e) => setDomainInput(e.target.value)}
+                />
+                <button className="btn-primary" onClick={addDomain}>Add</button>
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                {trackedDomains.map((d) => (
+                  <span key={d} className="pill pill-ghost flex items-center gap-2">
+                    {d}
+                    <button
+                      className="text-xs text-red-500"
+                      onClick={() => removeDomain(d)}
+                    >
+                      remove
+                    </button>
+                  </span>
+                ))}
+                {trackedDomains.length === 0 && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">No tracked domains yet.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
               <button
-                key={d}
-                className="border rounded px-3 py-1"
-                onClick={() => removeDomain(d)}
-                title="Click to remove"
+                className="btn-primary"
+                onClick={save}
+                disabled={saving}
               >
-                {d} ✕
+                {saving ? "Saving..." : "Save"}
               </button>
-            ))}
-            {trackedDomains.length === 0 && <p className="opacity-70">No domains yet.</p>}
+
+              <button className="btn-ghost" onClick={load}>
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="card sticky top-6 space-y-3">
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
+              <nav className="flex flex-col gap-2">
+                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost text-left" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost text-left" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost text-left" href="/buddy">🤝 Buddy</a>
+                <a className="pill pill-ghost text-left" href="/metrics">📈 Metrics</a>
+              </nav>
+            </div>
           </div>
         </div>
-      </section>
-
-      <button 
-        onClick={save}
-        disabled={saving}
-        className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-      >
-        {saving ? "Saving..." : "Save Settings"}
-      </button>
+      </div>
     </main>
   );
 }

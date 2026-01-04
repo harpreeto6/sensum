@@ -10,16 +10,61 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <main className="p-6 space-y-4">
-      <header className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold">Profile</h1>
-        <a className="underline" href="/">Today</a>
-      </header>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">S</div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Profile</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Your Sensum identity</p>
+            </div>
+          </div>
 
-      <p><b>User ID:</b> {userId ?? "(not logged in)"}</p>
-      <p className="opacity-80">
-        (Day 2 simple version: progress is shown on Today after completing a quest.)
-      </p>
+          <nav className="flex gap-3 text-sm">
+            <a className="nav-pill" href="/">Today</a>
+            <a className="nav-pill" href="/settings">Settings</a>
+          </nav>
+        </header>
+
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="card space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Account</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Basics</h2>
+              </div>
+              <a className="nav-pill" href="/settings">Edit</a>
+            </div>
+
+            <div className="stat-row">
+              <span>User ID</span>
+              <strong>{userId ?? "(not logged in)"}</strong>
+            </div>
+            <div className="stat-row">
+              <span>Sharing</span>
+              <strong className="text-sm text-slate-600 dark:text-slate-300">Manage in Settings</strong>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Progress (XP/level/streak) updates when you complete quests on the Today page.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="card sticky top-6 space-y-3">
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
+              <nav className="flex flex-col gap-2">
+                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost text-left" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost text-left" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost text-left" href="/buddy">🤝 Buddy</a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

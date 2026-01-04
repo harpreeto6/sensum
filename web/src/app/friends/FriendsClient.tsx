@@ -164,139 +164,208 @@ export default function FriendsClient() {
   }
 
   return (
-    <main className="p-6 space-y-6">
-      <header className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold">Friends</h1>
-        <a className="underline" href="/">Today</a>
-        <a className="underline" href="/moments">Moments</a>
-        <a className="underline" href="/profile">Profile</a>
-      </header>
-
-      <section className="border rounded p-3 space-y-2">
-        <p>
-          <b>User ID:</b> {userId ?? "(not logged in)"}
-        </p>
-        {msg && <p>{msg}</p>}
-      </section>
-
-      <section className="border rounded p-3 space-y-3">
-        <h2 className="text-lg font-semibold">Invite</h2>
-
-        <button className="border px-4 py-2 rounded" onClick={generateInvite}>
-          Generate invite code
-        </button>
-
-        {invite && (
-          <div className="space-y-1">
-            <p>
-              <b>Code:</b> {invite.code}
-            </p>
-            <p>
-              <b>Link:</b>{" "}
-              <a className="underline" href={invite.link}>
-                {invite.link}
-              </a>
-            </p>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">
+              S
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Friends</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Invite-only, low-noise connections</p>
+            </div>
           </div>
-        )}
-      </section>
 
-      <section className="border rounded p-3 space-y-3">
-        <h2 className="text-lg font-semibold">Accept invite</h2>
+          <nav className="flex gap-3 text-sm">
+            <a className="nav-pill" href="/settings">
+              Settings
+            </a>
+            <a className="nav-pill" href="/profile">
+              Profile
+            </a>
+          </nav>
+        </header>
 
-        <div className="flex gap-2 flex-wrap items-center">
-          <input
-            className="border rounded p-2 w-full max-w-sm"
-            placeholder="Invite code"
-            value={acceptCode}
-            onChange={(e) => setAcceptCode(e.target.value)}
-          />
-          <button className="border px-4 py-2 rounded" onClick={acceptInvite}>
-            Accept
-          </button>
-        </div>
-      </section>
-
-      <section className="border rounded p-3 space-y-3">
-        <h2 className="text-lg font-semibold">Your friends</h2>
-
-        {friends.length === 0 ? (
-          <div className="border rounded-lg p-8 text-center bg-gray-50 dark:bg-gray-900">
-            <p className="text-lg font-semibold mb-2">No friends yet</p>
-            <p className="text-sm opacity-70 mb-4">
-              Invite someone to share your journey! Friends can see your progress (based on your privacy settings).
-            </p>
-            <p className="text-xs opacity-60">
-              👥 Sensum is invite-only. No public profiles, no algorithms, just supportive connections.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {friends.map((f) => (
-              <div key={f.friendId} className="border rounded p-3 flex items-center justify-between gap-3">
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4">
+            <section className="card space-y-2">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold">{f.friendEmail}</p>
-                  <p className="text-sm opacity-80">
-                    id: {f.friendId} • {f.status}
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Account</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Your ID</h2>
+                </div>
+                <div className="pill pill-ghost">{userId ?? "(not logged in)"}</div>
+              </div>
+              {msg && <div className="alert">{msg}</div>}
+            </section>
+
+            <section className="card space-y-3">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Invite</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Share a code</h2>
+              </div>
+
+              <button className="btn-primary" onClick={generateInvite}>
+                Generate invite code
+              </button>
+
+              {invite && (
+                <div className="space-y-2 text-sm">
+                  <div className="stat-row">
+                    <span>Code</span>
+                    <strong>{invite.code}</strong>
+                  </div>
+                  <div className="stat-row">
+                    <span>Link</span>
+                    <a className="underline" href={invite.link}>
+                      {invite.link}
+                    </a>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="card space-y-3">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Accept</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Enter a code</h2>
+              </div>
+
+              <div className="flex gap-2 flex-wrap items-center">
+                <input
+                  className="input w-full max-w-sm"
+                  placeholder="Invite code"
+                  value={acceptCode}
+                  onChange={(e) => setAcceptCode(e.target.value)}
+                />
+                <button className="btn-primary" onClick={acceptInvite}>
+                  Accept
+                </button>
+              </div>
+            </section>
+
+            <section className="card space-y-3">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Friends</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Your list</h2>
+              </div>
+
+              {friends.length === 0 ? (
+                <div className="empty-card">
+                  <p className="text-lg font-semibold mb-2 text-slate-900 dark:text-slate-50">No friends yet</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                    Invite someone to share your journey! Friends can see your progress (based on your privacy settings).
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    👥 Sensum is invite-only. No public profiles, no algorithms, just supportive connections.
                   </p>
                 </div>
+              ) : (
+                <div className="space-y-2">
+                  {friends.map((f) => (
+                    <div key={f.friendId} className="quest-card">
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-slate-50">{f.friendEmail}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">
+                          id: {f.friendId} • {f.status}
+                        </p>
+                      </div>
 
-                {f.status === "accepted" && (
-                  <button className="border px-3 py-1 rounded" onClick={() => removeFriend(f.friendId)}>
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="border rounded p-3 space-y-3">
-        <h2 className="text-lg font-semibold">Friend activity</h2>
-
-        {feed.length === 0 ? (
-          <div className="border rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-900">
-            <p className="text-sm opacity-70">
-              {friends.length === 0
-                ? "Add friends to see their journey here"
-                : "Your friends haven't shared anything yet, or they've turned sharing off in settings"}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {feed.map((item, idx) => (
-              <div key={`${item.friendId}-${item.at}-${idx}`} className="border rounded p-3">
-                <p className="font-semibold">{item.friendEmail}</p>
-                <p className="text-sm opacity-80">{new Date(item.at).toLocaleString()}</p>
-
-                <div className="mt-2 text-sm space-y-1">
-                  {(item.level != null || item.xp != null) && (
-                    <p>
-                      <b>Level:</b> {item.level ?? "—"} &nbsp; <b>XP:</b> {item.xp ?? "—"}
-                    </p>
-                  )}
-                  {item.streak != null && (
-                    <p>
-                      <b>Streak:</b> {item.streak}
-                    </p>
-                  )}
-                  {item.category && (
-                    <p>
-                      <b>Category:</b> {item.category}
-                    </p>
-                  )}
-                  {item.momentText && (
-                    <p>
-                      <b>Moment:</b> {item.momentText}
-                    </p>
-                  )}
+                      {f.status === "accepted" && (
+                        <button className="btn-ghost" onClick={() => removeFriend(f.friendId)}>
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
+              )}
+            </section>
+
+            <section className="card space-y-3">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Feed</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Friend activity</h2>
               </div>
-            ))}
+
+              {feed.length === 0 ? (
+                <div className="empty-card">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    {friends.length === 0
+                      ? "Add friends to see their journey here"
+                      : "Your friends haven't shared anything yet, or they've turned sharing off in settings"}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {feed.map((item, idx) => (
+                    <div key={`${item.friendId}-${item.at}-${idx}`} className="card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-900 dark:text-slate-50">{item.friendEmail}</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {new Date(item.at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 text-sm space-y-1 text-slate-700 dark:text-slate-200">
+                        {(item.level != null || item.xp != null) && (
+                          <p>
+                            <b>Level:</b> {item.level ?? "—"} &nbsp; <b>XP:</b> {item.xp ?? "—"}
+                          </p>
+                        )}
+                        {item.streak != null && (
+                          <p>
+                            <b>Streak:</b> {item.streak}
+                          </p>
+                        )}
+                        {item.category && (
+                          <p>
+                            <b>Category:</b> {item.category}
+                          </p>
+                        )}
+                        {item.momentText && (
+                          <p>
+                            <b>Moment:</b> {item.momentText}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
-        )}
-      </section>
+
+          <div className="space-y-4">
+            <div className="card sticky top-6 space-y-3">
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
+              <nav className="flex flex-col gap-2">
+                <a className="pill pill-ghost text-left" href="/">
+                  🏠 Today
+                </a>
+                <a className="pill pill-ghost text-left" href="/moments">
+                  📔 Moments
+                </a>
+                <a className="pill pill-ghost text-left" href="/stats">
+                  📊 Stats
+                </a>
+                <a className="pill pill-ghost text-left" href="/achievements">
+                  🏆 Achievements
+                </a>
+                <a className="pill pill-ghost text-left" href="/leaderboard">
+                  🎖️ Leaderboard
+                </a>
+                <a className="pill pill-ghost text-left" href="/buddy">
+                  🤝 Buddy
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

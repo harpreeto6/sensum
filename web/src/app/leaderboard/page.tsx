@@ -68,95 +68,136 @@ export default function LeaderboardPage() {
     }
   };
 
-  if (!userId) return <div className="p-8">Loading...</div>;
+  if (!userId) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <div className="card">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Loading...</h1>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-4xl font-bold mb-6">🏆 Leaderboard</h1>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">
+              S
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Leaderboard</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Friendly competition, zero noise</p>
+            </div>
+          </div>
 
-      {/* View Toggle */}
-      <div className="flex gap-4 mb-4">
-        <button
-          onClick={() => setView('global')}
-          className={`px-6 py-2 rounded font-semibold ${
-            view === 'global'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700'
-          }`}
-        >
-          Global
-        </button>
-        <button
-          onClick={() => setView('friends')}
-          className={`px-6 py-2 rounded font-semibold ${
-            view === 'friends'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700'
-          }`}
-        >
-          Friends
-        </button>
-      </div>
+          <nav className="flex gap-3 text-sm">
+            <a className="nav-pill" href="/settings">Settings</a>
+            <a className="nav-pill" href="/profile">Profile</a>
+          </nav>
+        </header>
 
-      {/* Metric Selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Rank by:</label>
-        <select
-          value={metric}
-          onChange={(e) => setMetric(e.target.value as any)}
-          className="border rounded px-4 py-2"
-        >
-          <option value="xp">XP</option>
-          <option value="streak">Streak</option>
-          <option value="level">Level</option>
-          <option value="quest_count">Quest Count</option>
-        </select>
-      </div>
-
-      {/* Leaderboard List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {leaderboard.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">No data yet</div>
-        ) : (
-          <div className="divide-y">
-            {leaderboard.map((entry) => (
-              <div
-                key={entry.userId}
-                className={`p-4 flex items-center gap-4 ${
-                  entry.userId === userId
-                    ? 'bg-blue-50 border-l-4 border-blue-600'
-                    : ''
-                }`}
-              >
-                {/* Rank */}
-                <div className="text-2xl font-bold w-12 text-center">
-                  {getMedalEmoji(entry.rank)}
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4">
+            <section className="card space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">View</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Rankings</h2>
                 </div>
 
-                {/* User Info */}
-                <div className="flex-1">
-                  <p className="font-semibold">
-                    {entry.email}
-                    {entry.userId === userId && (
-                      <span className="ml-2 text-sm text-blue-600">(You)</span>
-                    )}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Level {entry.level} • {entry.streak} day streak
-                  </p>
-                </div>
-
-                {/* Metric Value */}
-                <div className="text-right">
-                  <p className="text-xl font-bold text-blue-600">
-                    {getMetricValue(entry)}
-                  </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setView('global')}
+                    className={view === 'global' ? 'pill pill-active' : 'pill pill-ghost'}
+                  >
+                    Global
+                  </button>
+                  <button
+                    onClick={() => setView('friends')}
+                    className={view === 'friends' ? 'pill pill-active' : 'pill pill-ghost'}
+                  >
+                    Friends
+                  </button>
                 </div>
               </div>
-            ))}
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <label className="label">Rank by</label>
+                <select
+                  value={metric}
+                  onChange={(e) => setMetric(e.target.value as any)}
+                  className="input"
+                >
+                  <option value="xp">XP</option>
+                  <option value="streak">Streak</option>
+                  <option value="level">Level</option>
+                  <option value="quest_count">Quest Count</option>
+                </select>
+              </div>
+            </section>
+
+            <section className="card overflow-hidden p-0">
+              {leaderboard.length === 0 ? (
+                <div className="p-8 text-center text-slate-600 dark:text-slate-300">No data yet</div>
+              ) : (
+                <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {leaderboard.map((entry) => (
+                    <div
+                      key={entry.userId}
+                      className={
+                        entry.userId === userId
+                          ? 'p-4 flex items-center gap-4 bg-slate-50 dark:bg-slate-900/40'
+                          : 'p-4 flex items-center gap-4'
+                      }
+                    >
+                      <div className="text-2xl font-bold w-12 text-center text-slate-900 dark:text-slate-50">
+                        {getMedalEmoji(entry.rank)}
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900 dark:text-slate-50">
+                          {entry.email}
+                          {entry.userId === userId && (
+                            <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">(You)</span>
+                          )}
+                        </p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">
+                          Level {entry.level} • {entry.streak} day streak
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-slate-900 dark:text-slate-50">
+                          {getMetricValue(entry)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
-        )}
+
+          <div className="space-y-4">
+            <div className="card sticky top-6 space-y-3">
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
+              <nav className="flex flex-col gap-2">
+                <a className="pill pill-ghost text-left" href="/">🏠 Today</a>
+                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost text-left" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost text-left" href="/buddy">🤝 Buddy</a>
+                <a className="pill pill-ghost text-left" href="/metrics">📈 Metrics</a>
+              </nav>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

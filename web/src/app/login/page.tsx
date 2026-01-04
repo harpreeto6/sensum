@@ -30,32 +30,76 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="p-6 max-w-md">
-      <h1 className="text-2xl font-bold">Login</h1>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">
+              S
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Login</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Welcome back</p>
+            </div>
+          </div>
 
-      <form onSubmit={onSubmit} className="mt-4 space-y-3">
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {err && <p className="text-red-600">{err}</p>}
-        <button className="border px-4 py-2 rounded" type="submit">
-          Log in
-        </button>
-      </form>
+          <nav className="flex gap-3 text-sm">
+            <a className="nav-pill" href="/signup">
+              Sign up
+            </a>
+          </nav>
+        </header>
 
-      <p className="mt-4">
-        No account? <a className="underline" href="/signup">Sign up</a>
-      </p>
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="card space-y-4">
+            <div>
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Account</p>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Sign in</h2>
+            </div>
+
+            <form onSubmit={onSubmit} className="space-y-3">
+              <input
+                className="input w-full"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <input
+                className="input w-full"
+                placeholder="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {err && <div className="alert alert-error">{err}</div>}
+              <button className="btn-primary" type="submit">
+                Log in
+              </button>
+            </form>
+
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              No account?{" "}
+              <a className="underline" href="/signup">
+                Sign up
+              </a>
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="card sticky top-6 space-y-3">
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
+              <nav className="flex flex-col gap-2">
+                <a className="pill pill-ghost text-left" href="/">
+                  Today
+                </a>
+                <a className="pill pill-ghost text-left" href="/signup">
+                  Create account
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

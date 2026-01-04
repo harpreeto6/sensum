@@ -24,3 +24,98 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Card component */
+.card {
+  @apply bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700;
+}
+
+/* Button styles */
+.nav-pill {
+  @apply px-4 py-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+}
+
+.btn-primary {
+  @apply px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-ghost {
+  @apply px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+}
+
+/* Pill buttons */
+.pill {
+  @apply px-3 py-1 rounded-full text-sm font-medium transition-colors;
+}
+
+.pill-active {
+  @apply bg-blue-500 text-white;
+}
+
+.pill-ghost {
+  @apply bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600;
+}
+
+/* Stat pill */
+.stat-pill {
+  @apply bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600;
+}
+
+.stat-pill .label {
+  @apply text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400;
+}
+
+.stat-pill .value {
+  @apply text-2xl font-bold text-slate-900 dark:text-slate-50 mt-1;
+}
+
+/* Stat row */
+.stat-row {
+  @apply flex justify-between items-center py-3 border-b border-slate-200 dark:border-slate-700 last:border-b-0;
+}
+
+.stat-row span {
+  @apply text-sm text-slate-600 dark:text-slate-400;
+}
+
+.stat-row strong {
+  @apply text-lg font-semibold text-slate-900 dark:text-slate-50;
+}
+
+/* Alert */
+.alert {
+  @apply px-4 py-3 rounded-lg text-sm font-medium;
+}
+
+.alert-success {
+  @apply bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800;
+}
+
+.alert-error {
+  @apply bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800;
+}
+
+/* Form input */
+.input {
+  @apply w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+/* Label */
+.label {
+  @apply text-sm font-semibold text-slate-700 dark:text-slate-300;
+}
+
+.value {
+  @apply text-lg font-bold text-slate-900 dark:text-slate-50;
+}
+
+/* Quest card */
+.quest-card {
+  @apply bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow;
+}
+
+/* Empty state card */
+.empty-card {
+  @apply bg-slate-50 dark:bg-slate-700/30 rounded-lg p-6 text-center space-y-3 border-2 border-dashed border-slate-300 dark:border-slate-600;
+}
+

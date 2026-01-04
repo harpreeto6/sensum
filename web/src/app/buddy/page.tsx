@@ -153,186 +153,221 @@ export default function BuddyPage() {
     }
   };
 
-  if (!userId) return <div className="p-8">Loading...</div>;
+  if (!userId) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <div className="card">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Loading...</h1>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Buddy Sessions</h1>
-
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b">
-        <button
-          onClick={() => setActiveTab('list')}
-          className={`px-4 py-2 font-semibold ${
-            activeTab === 'list'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-600'
-          }`}
-        >
-          My Sessions
-        </button>
-        <button
-          onClick={() => setActiveTab('start')}
-          className={`px-4 py-2 font-semibold ${
-            activeTab === 'start'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-600'
-          }`}
-        >
-          Start New
-        </button>
-      </div>
-
-      {/* Start New Session Tab */}
-      {activeTab === 'start' && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-2xl font-bold mb-4">Start a Buddy Session</h2>
-          <form onSubmit={startSession} className="space-y-4">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">
+              S
+            </div>
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Select Friend
-              </label>
-              <select
-                value={selectedFriend || ''}
-                onChange={(e) => setSelectedFriend(Number(e.target.value))}
-                className="w-full border rounded px-4 py-2"
-              >
-                <option value="">-- Choose a friend --</option>
-                {friends.map((f) => (
-                  <option key={f.friendId} value={f.friendId}>
-                    {f.friendEmail}
-                  </option>
-                ))}
-              </select>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Buddy</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Co-work and check in together</p>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Activity Type
-              </label>
-              <select
-                value={mode}
-                onChange={(e) => setMode(e.target.value)}
-                className="w-full border rounded px-4 py-2"
-              >
-                <option value="study">Study</option>
-                <option value="exercise">Exercise</option>
-                <option value="meditation">Meditation</option>
-                <option value="work">Work</option>
-              </select>
-            </div>
+          <nav className="flex gap-3 text-sm">
+            <a className="nav-pill" href="/settings">Settings</a>
+            <a className="nav-pill" href="/profile">Profile</a>
+          </nav>
+        </header>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Duration (minutes): {duration}
-              </label>
-              <input
-                type="range"
-                min="15"
-                max="180"
-                step="15"
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700"
-            >
-              Create Session
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Sessions List Tab */}
-      {activeTab === 'list' && (
-        <div className="space-y-4">
-          {sessions.length === 0 ? (
-            <div className="bg-white p-6 rounded-lg text-center text-gray-500">
-              No sessions yet
-            </div>
-          ) : (
-            sessions.map((session) => (
-              <div
-                key={session.id}
-                className="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition"
-                onClick={() => {
-                  setSelectedSession(session.id);
-                  loadSessionDetails(session.id);
-                }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold capitalize mb-2">
-                      {session.mode}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {session.durationMinutes} min
-                    </p>
-                  </div>
-                  <span
-                    className={`px-4 py-2 rounded font-semibold text-white ${
-                      session.status === 'pending'
-                        ? 'bg-yellow-500'
-                        : session.status === 'active'
-                        ? 'bg-green-500'
-                        : 'bg-gray-500'
-                    }`}
-                  >
-                    {session.status.toUpperCase()}
-                  </span>
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4">
+            <section className="card space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Sessions</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Buddy Sessions</h2>
                 </div>
-
-                {(session.latestCheckinUserA || session.latestCheckinUserB) && (
-                  <div className="bg-gray-50 p-3 rounded mb-4 text-sm">
-                    {session.latestCheckinUserA && (
-                      <p>User A: {session.latestCheckinUserA.status}</p>
-                    )}
-                    {session.latestCheckinUserB && (
-                      <p>User B: {session.latestCheckinUserB.status}</p>
-                    )}
-                  </div>
-                )}
-
                 <div className="flex gap-2">
-                  {session.status === 'pending' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        joinSession(session.id);
-                      }}
-                      className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600"
-                    >
-                      Join
-                    </button>
-                  )}
-                  {session.status === 'active' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        endSession(session.id);
-                      }}
-                      className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600"
-                    >
-                      End
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setActiveTab('list')}
+                    className={activeTab === 'list' ? 'pill pill-active' : 'pill pill-ghost'}
+                  >
+                    My Sessions
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('start')}
+                    className={activeTab === 'start' ? 'pill pill-active' : 'pill pill-ghost'}
+                  >
+                    Start New
+                  </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      )}
+            </section>
 
-      {/* Session Details Modal */}
+            {activeTab === 'start' && (
+              <section className="card space-y-4">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">New</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Start a session</h2>
+                </div>
+
+                <form onSubmit={startSession} className="space-y-4">
+                  <div>
+                    <label className="label">Select Friend</label>
+                    <select
+                      value={selectedFriend || ''}
+                      onChange={(e) => setSelectedFriend(Number(e.target.value))}
+                      className="input w-full"
+                    >
+                      <option value="">-- Choose a friend --</option>
+                      {friends.map((f) => (
+                        <option key={f.friendId} value={f.friendId}>
+                          {f.friendEmail}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="label">Activity Type</label>
+                    <select
+                      value={mode}
+                      onChange={(e) => setMode(e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="study">Study</option>
+                      <option value="exercise">Exercise</option>
+                      <option value="meditation">Meditation</option>
+                      <option value="work">Work</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="label">Duration (minutes): {duration}</label>
+                    <input
+                      type="range"
+                      min="15"
+                      max="180"
+                      step="15"
+                      value={duration}
+                      onChange={(e) => setDuration(Number(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <button type="submit" className="btn-primary">
+                    Create Session
+                  </button>
+                </form>
+              </section>
+            )}
+
+            {activeTab === 'list' && (
+              <div className="space-y-4">
+                {sessions.length === 0 ? (
+                  <div className="empty-card">No sessions yet</div>
+                ) : (
+                  sessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="quest-card cursor-pointer"
+                      onClick={() => {
+                        setSelectedSession(session.id);
+                        loadSessionDetails(session.id);
+                      }}
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <h3 className="text-lg font-semibold capitalize text-slate-900 dark:text-slate-50">
+                            {session.mode}
+                          </h3>
+                          <p className="text-sm text-slate-600 dark:text-slate-300">
+                            {session.durationMinutes} min
+                          </p>
+                        </div>
+                        <span
+                          className={`pill text-white ${
+                            session.status === 'pending'
+                              ? 'bg-yellow-500'
+                              : session.status === 'active'
+                              ? 'bg-green-500'
+                              : 'bg-gray-500'
+                          }`}
+                        >
+                          {session.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      {(session.latestCheckinUserA || session.latestCheckinUserB) && (
+                        <div className="mt-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/40 p-3 text-sm">
+                          {session.latestCheckinUserA && (
+                            <p className="text-slate-700 dark:text-slate-200">User A: {session.latestCheckinUserA.status}</p>
+                          )}
+                          {session.latestCheckinUserB && (
+                            <p className="text-slate-700 dark:text-slate-200">User B: {session.latestCheckinUserB.status}</p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-4 flex gap-2">
+                        {session.status === 'pending' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              joinSession(session.id);
+                            }}
+                            className="btn-primary"
+                          >
+                            Join
+                          </button>
+                        )}
+                        {session.status === 'active' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              endSession(session.id);
+                            }}
+                            className="btn-primary"
+                          >
+                            End
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="card sticky top-6 space-y-3">
+              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
+              <nav className="flex flex-col gap-2">
+                <a className="pill pill-ghost text-left" href="/">🏠 Today</a>
+                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost text-left" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost text-left" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost text-left" href="/metrics">📈 Metrics</a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {selectedSession && sessionDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-              <h2 className="text-2xl font-bold capitalize">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto p-0">
+            <div className="sticky top-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur border-b border-slate-200 dark:border-slate-800 p-6 flex justify-between items-center">
+              <h2 className="text-xl font-semibold capitalize text-slate-900 dark:text-slate-50">
                 {sessionDetails.mode}
               </h2>
               <button
@@ -340,16 +375,16 @@ export default function BuddyPage() {
                   setSelectedSession(null);
                   setSessionDetails(null);
                 }}
-                className="text-2xl text-gray-500 hover:text-gray-700"
+                className="pill pill-ghost"
               >
-                ✕
+                Close
               </button>
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="bg-gray-50 p-4 rounded">
-                <h3 className="font-bold mb-2">Info</h3>
-                <p>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/30 p-4">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-50 mb-2">Info</h3>
+                <p className="text-slate-700 dark:text-slate-200">
                   Status:{' '}
                   <span
                     className={`font-semibold ${
@@ -364,36 +399,36 @@ export default function BuddyPage() {
               </div>
 
               <div>
-                <h3 className="font-bold mb-3">Check-ins</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-50 mb-3">Check-ins</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {sessionDetails.checkins && sessionDetails.checkins.length > 0 ? (
                     sessionDetails.checkins.map((checkin: any) => (
                       <div
                         key={checkin.id}
-                        className="bg-blue-50 p-3 rounded text-sm border-l-4 border-blue-500"
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/40 p-3 text-sm"
                       >
-                        <p className="font-semibold">
+                        <p className="font-semibold text-slate-900 dark:text-slate-50">
                           User {checkin.userId}: {checkin.status}
                         </p>
-                        <p className="text-gray-600">
+                        <p className="text-slate-600 dark:text-slate-300">
                           {new Date(checkin.createdAt).toLocaleTimeString()}
                         </p>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-500">No check-ins</p>
+                    <p className="text-slate-600 dark:text-slate-300">No check-ins</p>
                   )}
                 </div>
               </div>
 
               {sessionDetails.status === 'active' && (
-                <div className="bg-gray-50 p-4 rounded">
-                  <h3 className="font-bold mb-2">Check in</h3>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/30 p-4">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-50 mb-2">Check in</h3>
                   <div className="flex gap-2">
                     <select
                       value={checkinStatus}
                       onChange={(e) => setCheckinStatus(e.target.value)}
-                      className="flex-1 border rounded px-3 py-2"
+                      className="input flex-1"
                     >
                       <option value="doing_well">Doing Well</option>
                       <option value="need_break">Need Break</option>
@@ -401,7 +436,7 @@ export default function BuddyPage() {
                     </select>
                     <button
                       onClick={() => submitCheckin(selectedSession)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      className="btn-primary"
                     >
                       Submit
                     </button>
@@ -412,6 +447,6 @@ export default function BuddyPage() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

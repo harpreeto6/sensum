@@ -6,6 +6,8 @@ import com.sensum.backend.achievement.AchievementService;
 import com.sensum.backend.config.ApiExceptionHandler;
 import com.sensum.backend.config.RequestIdFilter;
 import com.sensum.backend.friends.FriendshipRepository;
+import com.sensum.backend.moments.Moment;
+import com.sensum.backend.moments.MomentRepository;
 import com.sensum.backend.security.JwtAuthenticationFilter;
 import com.sensum.backend.testutil.TestAuth;
 import com.sensum.backend.user.User;
@@ -55,6 +57,9 @@ class QuestControllerTest {
 
     @MockitoBean
     FriendshipRepository friendshipRepo;
+
+    @MockitoBean
+    MomentRepository momentRepo;
 
     @Test
     void complete_requiresAuth() throws Exception {
@@ -135,5 +140,38 @@ class QuestControllerTest {
         verify(completionRepo).save(captor.capture());
         QuestCompletion saved = captor.getValue();
         org.junit.jupiter.api.Assertions.assertEquals(1L, saved.getUserId());
+
+        ArgumentCaptor<Moment> momentCaptor = ArgumentCaptor.forClass(Moment.class);
+        verify(momentRepo).save(momentCaptor.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(1L, momentCaptor.getValue().getUserId());
+        org.junit.jupiter.api.Assertions.assertEquals("hi", momentCaptor.getValue().getText());
+    }
+
+    @Test
+    void complete_blankMoment_doesNotCreateStandaloneMoment() throws Exception {
+        Quest q = new Quest();
+        q.setId(1L);
+        q.setDurationSec(300);
+        q.setCategory("calm");
+        q.setTitle("t");
+        q.setPrompt("p");
+
+        User u = new User();
+        u.id = 1L;
+        u.email = "a@example.com";
+
+        when(questRepo.findById(1L)).thenReturn(Optional.of(q));
+        when(userRepo.findById(1L)).thenReturn(Optional.of(u));
+        when(completionRepo.countByUserId(1L)).thenReturn(1L);
+        when(friendshipRepo.countByUserIdAndStatus(1L, "accepted")).thenReturn(0L);
+        when(achievementService.unlockAchievementsForUser(eq(1L), ArgumentMatchers.anyMap())).thenReturn(List.of());
+
+        mvc.perform(post("/quests/complete")
+                        .cookie(TestAuth.authCookie(1L, "a@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":999999,\"questId\":1,\"mood\":\"ok\",\"momentText\":\"   \"}"))
+                .andExpect(status().isOk());
+
+        verify(momentRepo, never()).save(ArgumentMatchers.any());
     }
 }

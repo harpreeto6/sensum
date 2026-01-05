@@ -20,6 +20,45 @@ Notes:
 - Auth is cookie-based (an HttpOnly JWT cookie named `sensum_token`).
 - The web app and extension must send cookies (`credentials: "include"`) so the backend can identify the user.
 
+## Quest Recommendation Algorithm (v1)
+
+The quest recommendation endpoint returns up to 3 “micro-action” quests for a given path/category.
+
+- Endpoint: `GET /quests/recommendations?path=<category>`
+- Candidate pool: all quests where `quest.category == path` (via `QuestRepository.findByCategory(path)`)
+
+### Scoring + personalization
+
+When the user is authenticated, Sensum computes a per-quest score from historical outcomes:
+
+$$score = 2 \times completed - 1 \times skipped$$
+
+- `completed` and `skipped` come from `quest_outcomes` aggregated per quest for that user.
+- `snoozed` outcomes are recorded but not currently used in scoring.
+
+### Exploration (randomness)
+
+To avoid returning the same 3 quests every time, the backend adds a small random factor during sorting (0–0.5) so similarly-scored quests occasionally rotate.
+
+### Cold-start behavior
+
+If the request is unauthenticated (no `userId` from the JWT cookie), or the pool is empty, the backend falls back to shuffling the pool and returning the first 3.
+
+### Feedback loop
+
+- `POST /quests/complete` records a completion and also stores an outcome of `completed`.
+- `POST /quests/skip` records an outcome of `skipped`.
+
+Over time this nudges recommendations toward quests the user tends to complete and away from ones they skip.
+
+## UX Improvements (Highlights)
+
+- Unified top navigation across pages (Menu + direct Today link)
+- Today shows XP/level/streak by default, including an XP progress bar aligned to backend level math (`level = 1 + xp/500`)
+- Moments are supported as standalone entries (not only tied to quests), and the Moments page shows Quests and Moments separately
+- Moments/Quests history supports grouping by day and incremental “Load 10 more” for quest history
+- Achievement modal styling updated to match the app theme
+
 ## How to run (local dev)
 
 ### 1) Start Postgres (Docker)

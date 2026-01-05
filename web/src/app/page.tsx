@@ -20,6 +20,24 @@ type ProgressResponse = {
   newAchievements?: any[];
 };
 
+type FriendRow = {
+  friendId: number;
+  friendEmail: string;
+  status: string;
+};
+
+type FeedItem = {
+  friendId: number;
+  friendEmail: string;
+  at: string;
+
+  xp?: number | null;
+  level?: number | null;
+  streak?: number | null;
+  category?: string | null;
+  momentText?: string | null;
+};
+
 const PATHS = ["music", "fitness", "study", "friends", "calm", "outdoors"] as const;
 const MOODS = ["good", "okay", "stressed", "tired"] as const;
 
@@ -32,8 +50,17 @@ export default function TodayPage() {
 
   const [quests, setQuests] = useState<Quest[]>([]);
   const [momentText, setMomentText] = useState("");
+  const [quickMomentText, setQuickMomentText] = useState("");
+  const [quickMomentSaving, setQuickMomentSaving] = useState(false);
+  const [quickMomentMsg, setQuickMomentMsg] = useState("");
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [msg, setMsg] = useState("");
+
+  const [friends, setFriends] = useState<FriendRow[]>([]);
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [buddyFriendId, setBuddyFriendId] = useState<number | null>(null);
+  const [buddyStarting, setBuddyStarting] = useState(false);
+  const [buddyMsg, setBuddyMsg] = useState("");
 
   const [showAchievementModal, setShowAchievementModal] = useState(false);
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
@@ -49,8 +76,52 @@ export default function TodayPage() {
     const savedPath = localStorage.getItem("path");
     if (savedPath && PATHS.includes(savedPath as any)) setPath(savedPath as any);
     
-    loadProgress();
+    const id = Number(raw);
+    void loadProgress();
+    void loadFriends(id);
+    void loadFeed(id);
   }, [router]);
+
+  async function loadFriends(id: number) {
+    try {
+      const res = await fetch(`/api/friends?userId=${encodeURIComponent(String(id))}`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        setFriends([]);
+        return;
+      }
+      const rows: FriendRow[] = await res.json();
+      setFriends(Array.isArray(rows) ? rows : []);
+
+      const accepted = (Array.isArray(rows) ? rows : []).filter((f) => f.status === "accepted");
+      if (accepted.length > 0 && buddyFriendId == null) {
+        setBuddyFriendId(accepted[0].friendId);
+      }
+    } catch {
+      setFriends([]);
+    }
+  }
+
+  async function loadFeed(id: number) {
+    try {
+      const res = await fetch(`/api/friends/feed?userId=${encodeURIComponent(String(id))}`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        setFeed([]);
+        return;
+      }
+
+      const items: FeedItem[] = await res.json();
+      setFeed(Array.isArray(items) ? items : []);
+    } catch {
+      setFeed([]);
+    }
+  }
 
   async function loadProgress() {
     try {
@@ -158,6 +229,89 @@ export default function TodayPage() {
     }
   }
 
+  async function saveQuickMoment() {
+    const trimmed = quickMomentText.trim();
+    if (!trimmed) return;
+
+    setQuickMomentMsg("");
+    setQuickMomentSaving(true);
+
+    try {
+      const res = await fetch("/api/me/moments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ text: trimmed }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        setQuickMomentMsg(t || "Failed to save moment");
+        return;
+      }
+
+      setQuickMomentText("");
+      setQuickMomentMsg("✓ Moment saved");
+      setTimeout(() => setQuickMomentMsg(""), 2500);
+    } catch (err) {
+      setQuickMomentMsg("Failed to save moment");
+    } finally {
+      setQuickMomentSaving(false);
+    }
+  }
+
+  async function startBuddyOneClick() {
+    if (!userId) return;
+
+    const accepted = friends.filter((f) => f.status === "accepted");
+    const friendId = buddyFriendId ?? accepted[0]?.friendId;
+    if (!friendId) {
+      router.push("/friends");
+      return;
+    }
+
+    setBuddyMsg("");
+    setBuddyStarting(true);
+
+    try {
+      const res = await fetch("/api/buddy/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          userId,
+          friendId,
+          mode: "study",
+          durationMinutes: 30,
+        }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        setBuddyMsg(t || "Failed to start buddy session");
+        return;
+      }
+
+      setBuddyMsg("✓ Buddy session created");
+      setTimeout(() => setBuddyMsg(""), 2500);
+      router.push("/buddy");
+    } catch {
+      setBuddyMsg("Failed to start buddy session");
+    } finally {
+      setBuddyStarting(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
       <div className="mx-auto max-w-5xl px-4 py-8 space-y-8">
@@ -170,7 +324,19 @@ export default function TodayPage() {
             </div>
           </div>
 
-          <nav className="flex gap-3 text-sm">
+          <nav className="flex gap-3 text-sm items-center">
+            <details className="relative">
+              <summary className="nav-pill cursor-pointer select-none">Menu</summary>
+              <div className="absolute right-0 mt-2 w-56 card p-2 space-y-1 z-20">
+                <a className="pill pill-ghost block" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost block" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost block" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost block" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost block" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
+                <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
+              </div>
+            </details>
             <a className="nav-pill" href="/profile">Profile</a>
             <a className="nav-pill" href="/settings">Settings</a>
           </nav>
@@ -281,113 +447,220 @@ export default function TodayPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="card space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-3">
-                <p className="label">Pick a path</p>
-                <div className="flex flex-wrap gap-2">
-                  {PATHS.map((p) => (
-                    <button
-                      key={p}
-                      className={`pill ${p === path ? "pill-active" : "pill-ghost"}`}
-                      onClick={() => {
-                        setPath(p);
-                        loadQuests(p);
-                      }}
-                    >
-                      {p}
-                    </button>
-                  ))}
+          <div className="space-y-4">
+            <div className="card space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <p className="label">Pick a path</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PATHS.map((p) => (
+                      <button
+                        key={p}
+                        className={`pill ${p === path ? "pill-active" : "pill-ghost"}`}
+                        onClick={() => {
+                          setPath(p);
+                          loadQuests(p);
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="label">How are you?</p>
+                  <div className="flex flex-wrap gap-2">
+                    {MOODS.map((m) => (
+                      <button
+                        key={m}
+                        className={`pill ${m === mood ? "pill-active" : "pill-ghost"}`}
+                        onClick={() => setMood(m)}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <p className="label">How are you?</p>
-                <div className="flex flex-wrap gap-2">
-                  {MOODS.map((m) => (
-                    <button
-                      key={m}
-                      className={`pill ${m === mood ? "pill-active" : "pill-ghost"}`}
-                      onClick={() => setMood(m)}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {msg && (
-              <div className={`alert ${
-                msg.includes("Nice") || msg.includes("Noted") || msg.includes("✓") || msg.includes("✨")
-                  ? "alert-success"
-                  : "alert-error"
-              }`}>
-                {msg}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <p className="label">Optional moment (1 line)</p>
-              <input
-                className="input"
-                placeholder="e.g., Felt calmer after stepping outside"
-                value={momentText}
-                onChange={(e) => setMomentText(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-4">
-              {quests.length === 0 ? (
-                <div className="empty-card">
-                  <p className="text-lg font-semibold">Ready for a tiny quest?</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Pick a path and mood, then tap "Get 3 quests" to see suggestions tailored to your vibe.
-                  </p>
-                  <p className="text-xs text-slate-400">💡 Sensum learns what you like. Complete favorites, skip the rest.</p>
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  {quests.map((q) => (
-                    <div key={q.id} className="quest-card">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">{q.title}</p>
-                          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{q.prompt}</p>
-                          <p className="text-xs text-slate-400 mt-2">⏱️ ~{Math.floor(q.durationSec / 60)} min · {q.category}</p>
-                        </div>
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-2 mt-4">
-                        <button
-                          className="btn-primary"
-                          onClick={() => completeQuest(q)}
-                        >
-                          ✓ Complete
-                        </button>
-                        <button
-                          className="btn-ghost"
-                          onClick={() => handleSkip(q.id)}
-                        >
-                          Not interested
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+              {msg && (
+                <div
+                  className={`alert ${
+                    msg.includes("Nice") || msg.includes("Noted") || msg.includes("✓") || msg.includes("✨")
+                      ? "alert-success"
+                      : "alert-error"
+                  }`}
+                >
+                  {msg}
                 </div>
               )}
+
+              <div className="space-y-3">
+                <p className="label">Optional moment for this quest (1 line)</p>
+                <input
+                  className="input"
+                  placeholder="e.g., Felt calmer after stepping outside"
+                  value={momentText}
+                  onChange={(e) => setMomentText(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-4">
+                {quests.length === 0 ? (
+                  <div className="empty-card">
+                    <p className="text-xs text-slate-400">💡 Sensum learns what you like. Complete favorites, skip the rest.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {quests.map((q) => (
+                      <div key={q.id} className="quest-card">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">{q.title}</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{q.prompt}</p>
+                            <p className="text-xs text-slate-400 mt-2">
+                              ⏱️ ~{Math.floor(q.durationSec / 60)} min · {q.category}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2 mt-4">
+                          <button className="btn-primary" onClick={() => completeQuest(q)}>
+                            ✓ Complete
+                          </button>
+                          <button className="btn-ghost" onClick={() => handleSkip(q.id)}>
+                            Not interested
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="card space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Moments</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Quick moment</h2>
+                </div>
+                <a className="nav-pill" href="/moments">View all</a>
+              </div>
+
+              {quickMomentMsg ? (
+                <div className={quickMomentMsg.startsWith("✓") ? "alert alert-success" : "alert alert-error"}>
+                  {quickMomentMsg}
+                </div>
+              ) : null}
+
+              <textarea
+                className="input min-h-24 resize-none"
+                placeholder="What went well today?"
+                value={quickMomentText}
+                onChange={(e) => setQuickMomentText(e.target.value)}
+                maxLength={200}
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400">{quickMomentText.trim().length}/200</span>
+                <button
+                  className="btn-primary"
+                  onClick={saveQuickMoment}
+                  disabled={quickMomentSaving || !quickMomentText.trim()}
+                >
+                  {quickMomentSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="card sticky top-6 space-y-4">
-              <nav className="flex flex-col gap-2">
-                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
-                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
-                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
-                <a className="pill pill-ghost text-left" href="/achievements">🏆 Achievements</a>
-                <a className="pill pill-ghost text-left" href="/leaderboard">🎖️ Leaderboard</a>
-                <a className="pill pill-ghost text-left" href="/buddy">🤝 Buddy</a>
-              </nav>
+            <div className="card space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Buddy</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Start together</h2>
+                </div>
+                <a className="nav-pill" href="/buddy">Open</a>
+              </div>
+
+              {buddyMsg ? (
+                <div className={buddyMsg.startsWith("✓") ? "alert alert-success" : "alert alert-error"}>{buddyMsg}</div>
+              ) : null}
+
+              {friends.filter((f) => f.status === "accepted").length === 0 ? (
+                <div className="text-sm text-slate-600 dark:text-slate-300">
+                  Add a friend to start a buddy session. <a className="underline" href="/friends">Go to Friends</a>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  {friends.filter((f) => f.status === "accepted").length > 1 ? (
+                    <select
+                      className="input w-full max-w-sm"
+                      value={buddyFriendId ?? ""}
+                      onChange={(e) => setBuddyFriendId(Number(e.target.value))}
+                    >
+                      {friends
+                        .filter((f) => f.status === "accepted")
+                        .map((f) => (
+                          <option key={f.friendId} value={f.friendId}>
+                            {f.friendEmail}
+                          </option>
+                        ))}
+                    </select>
+                  ) : (
+                    <div className="pill pill-ghost">
+                      {friends.find((f) => f.status === "accepted")?.friendEmail}
+                    </div>
+                  )}
+
+                  <button className="btn-primary" onClick={startBuddyOneClick} disabled={buddyStarting}>
+                    {buddyStarting ? "Starting..." : "Start 30m session"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="card sticky top-6 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Friends</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Highlights</h2>
+                </div>
+                <a className="nav-pill" href="/friends">Manage</a>
+              </div>
+
+              {feed.length === 0 ? (
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  No recent activity yet. When friends complete quests, you’ll see it here.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {feed.slice(0, 3).map((item, idx) => (
+                    <div
+                      key={`${item.friendId}-${item.at}-${idx}`}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">{item.friendEmail}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{new Date(item.at).toLocaleString()}</p>
+                        </div>
+                        {item.category ? <span className="pill pill-ghost">{item.category}</span> : null}
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {typeof item.level === "number" ? <span className="pill pill-ghost">Level {item.level}</span> : null}
+                        {typeof item.streak === "number" ? <span className="pill pill-ghost">Streak {item.streak}</span> : null}
+                      </div>
+
+                      {item.momentText ? (
+                        <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">“{item.momentText}”</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

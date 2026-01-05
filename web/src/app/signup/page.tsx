@@ -43,15 +43,25 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <nav className="flex gap-3 text-sm">
-            <a className="nav-pill" href="/login">
-              Login
-            </a>
+          <nav className="flex gap-3 text-sm items-center">
+            <details className="relative">
+              <summary className="nav-pill cursor-pointer select-none">Menu</summary>
+              <div className="absolute right-0 mt-2 w-56 card p-2 space-y-1 z-20">
+                <a className="pill pill-ghost block" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost block" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost block" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost block" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost block" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
+                <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
+              </div>
+            </details>
+            <a className="nav-pill" href="/">Today</a>
+            <a className="nav-pill" href="/login">Login</a>
           </nav>
         </header>
 
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="card space-y-4">
+        <div className="card space-y-4">
             <div>
               <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Account</p>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Create account</h2>
@@ -83,21 +93,6 @@ export default function SignupPage() {
                 Login
               </a>
             </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="card sticky top-6 space-y-3">
-              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
-              <nav className="flex flex-col gap-2">
-                <a className="pill pill-ghost text-left" href="/">
-                  Today
-                </a>
-                <a className="pill pill-ghost text-left" href="/login">
-                  Already have an account
-                </a>
-              </nav>
-            </div>
-          </div>
         </div>
       </div>
     </main>

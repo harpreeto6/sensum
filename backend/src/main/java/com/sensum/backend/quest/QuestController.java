@@ -5,6 +5,8 @@ import com.sensum.backend.user.UserRepository;
 import com.sensum.backend.achievement.AchievementService;
 import com.sensum.backend.achievement.Achievement;
 import com.sensum.backend.friends.FriendshipRepository;
+import com.sensum.backend.moments.Moment;
+import com.sensum.backend.moments.MomentRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +46,7 @@ public class QuestController {
     private final QuestCompletionRepository completionRepo;
     private final FriendshipRepository friendshipRepo;
     private final QuestOutcomeRepository outcomeRepo;
+    private final MomentRepository momentRepo;
     private AchievementService achievementService;
 
     public QuestController(
@@ -52,7 +55,8 @@ public class QuestController {
             QuestCompletionRepository completionRepo,
             AchievementService achievementService,
             FriendshipRepository friendshipRepo,
-            QuestOutcomeRepository outcomeRepo
+            QuestOutcomeRepository outcomeRepo,
+            MomentRepository momentRepo
     ) {
         this.questRepo = questRepo;
         this.userRepo = userRepo;
@@ -60,6 +64,7 @@ public class QuestController {
         this.achievementService = achievementService;
         this.friendshipRepo = friendshipRepo;
         this.outcomeRepo = outcomeRepo;
+        this.momentRepo = momentRepo;
     }
 
     /**
@@ -193,6 +198,17 @@ public class QuestController {
         c.setMood(req.mood);
         c.setMomentText(req.momentText);
         completionRepo.save(c);
+
+        // If the user wrote a reflection, also persist it as a standalone moment.
+        if (req.momentText != null) {
+            String trimmed = req.momentText.trim();
+            if (!trimmed.isEmpty()) {
+                Moment m = new Moment();
+                m.setUserId(authUserId);
+                m.setText(trimmed);
+                momentRepo.save(m);
+            }
+        }
 
         // Also save as an outcome for personalization.
         QuestOutcome outcome = new QuestOutcome(authUserId, req.questId, "completed");

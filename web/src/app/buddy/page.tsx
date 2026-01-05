@@ -179,14 +179,26 @@ export default function BuddyPage() {
             </div>
           </div>
 
-          <nav className="flex gap-3 text-sm">
-            <a className="nav-pill" href="/settings">Settings</a>
+          <nav className="flex gap-3 text-sm items-center">
+            <details className="relative">
+              <summary className="nav-pill cursor-pointer select-none">Menu</summary>
+              <div className="absolute right-0 mt-2 w-56 card p-2 space-y-1 z-20">
+                <a className="pill pill-ghost block" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost block" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost block" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost block" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost block" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
+                <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
+              </div>
+            </details>
+            <a className="nav-pill" href="/">Today</a>
             <a className="nav-pill" href="/profile">Profile</a>
+            <a className="nav-pill" href="/settings">Settings</a>
           </nav>
         </header>
 
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-4">
+        <div className="space-y-4">
             <section className="card space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -282,25 +294,19 @@ export default function BuddyPage() {
                         loadSessionDetails(session.id);
                       }}
                     >
-                      <div className="flex justify-between items-start gap-4">
+                      <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-lg font-semibold capitalize text-slate-900 dark:text-slate-50">
-                            {session.mode}
-                          </h3>
+                          <p className="font-semibold text-slate-900 dark:text-slate-50">Session #{session.id}</p>
                           <p className="text-sm text-slate-600 dark:text-slate-300">
-                            {session.durationMinutes} min
+                            Mode: {session.mode ?? "—"} • Duration: {session.durationMinutes ?? "—"}m
                           </p>
                         </div>
                         <span
-                          className={`pill text-white ${
-                            session.status === 'pending'
-                              ? 'bg-yellow-500'
-                              : session.status === 'active'
-                              ? 'bg-green-500'
-                              : 'bg-gray-500'
+                          className={`pill ${
+                            session.status === 'active' ? 'pill-active' : 'pill-ghost'
                           }`}
                         >
-                          {session.status.toUpperCase()}
+                          {String(session.status || "").toUpperCase() || "—"}
                         </span>
                       </div>
 
@@ -345,22 +351,6 @@ export default function BuddyPage() {
               </div>
             )}
           </div>
-
-          <div className="space-y-4">
-            <div className="card sticky top-6 space-y-3">
-              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
-              <nav className="flex flex-col gap-2">
-                <a className="pill pill-ghost text-left" href="/">🏠 Today</a>
-                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
-                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
-                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
-                <a className="pill pill-ghost text-left" href="/achievements">🏆 Achievements</a>
-                <a className="pill pill-ghost text-left" href="/leaderboard">🎖️ Leaderboard</a>
-                <a className="pill pill-ghost text-left" href="/metrics">📈 Metrics</a>
-              </nav>
-            </div>
-          </div>
-        </div>
       </div>
 
       {selectedSession && sessionDetails && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface Achievement {
   id: number;
@@ -20,6 +20,17 @@ export default function AchievementModal({
 }: AchievementModalProps) {
   const [confetti, setConfetti] = useState(true);
 
+  const confettiPieces = useMemo(
+    () =>
+      [...Array(18)].map(() => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 0.6,
+        duration: 2 + Math.random() * 1.6,
+        size: 6 + Math.random() * 6,
+      })),
+    []
+  );
+
   useEffect(() => {
     // Hide confetti after 3 seconds
     const timer = setTimeout(() => setConfetti(false), 3000);
@@ -27,50 +38,68 @@ export default function AchievementModal({
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
-        {/* Confetti effect (simple CSS) */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+
+      <div className="relative w-full max-w-md">
         {confetti && (
-          <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
-            {[...Array(20)].map((_, i) => (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+            {confettiPieces.map((p, i) => (
               <div
                 key={i}
-                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-bounce"
+                className="absolute rounded-full bg-blue-500"
                 style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `-10px`,
-                  animation: `fall ${2 + Math.random() * 2}s linear infinite`,
+                  left: `${p.left}%`,
+                  top: `-12px`,
+                  width: `${p.size}px`,
+                  height: `${p.size}px`,
+                  animation: `fall ${p.duration}s linear ${p.delay}s infinite`,
                 }}
               />
             ))}
           </div>
         )}
 
-        {/* Content */}
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold mb-4">🎉 Congratulations!</h2>
-          <p className="text-gray-600 mb-6">You earned new badges!</p>
+        <div className="card relative z-10 p-6 sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold">
+                S
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">New achievements</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">You earned new badges</p>
+              </div>
+            </div>
 
-          {/* Achievement Cards */}
-          <div className="space-y-3 mb-6">
+            <button onClick={onClose} className="pill pill-ghost">
+              Close
+            </button>
+          </div>
+
+          <div className="mt-6 space-y-3">
             {achievements.map((achievement) => (
-              <div
-                key={achievement.id}
-                className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border-2 border-yellow-300"
-              >
-                <div className="text-4xl mb-2">{achievement.icon}</div>
-                <h3 className="font-bold text-lg">{achievement.name}</h3>
-                <p className="text-sm text-gray-600">{achievement.description}</p>
+              <div key={achievement.id} className="stat-pill">
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl leading-none">{achievement.icon}</div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900 dark:text-slate-50 truncate">
+                      {achievement.name}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      {achievement.description}
+                    </p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700"
-          >
-            Awesome! 🎯
-          </button>
+          <div className="mt-6">
+            <button onClick={onClose} className="btn-primary w-full">
+              Awesome
+            </button>
+          </div>
         </div>
       </div>
 

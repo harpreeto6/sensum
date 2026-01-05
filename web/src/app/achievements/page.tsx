@@ -74,79 +74,76 @@ export default function AchievementsPage() {
             </div>
           </div>
 
-          <nav className="flex gap-3 text-sm">
+          <nav className="flex gap-3 text-sm items-center">
+            <details className="relative">
+              <summary className="nav-pill cursor-pointer select-none">Menu</summary>
+              <div className="absolute right-0 mt-2 w-56 card p-2 space-y-1 z-20">
+                <a className="pill pill-ghost block" href="/moments">📔 Moments</a>
+                <a className="pill pill-ghost block" href="/stats">📊 Stats</a>
+                <a className="pill pill-ghost block" href="/friends">👥 Friends</a>
+                <a className="pill pill-ghost block" href="/achievements">🏆 Achievements</a>
+                <a className="pill pill-ghost block" href="/leaderboard">🎖️ Leaderboard</a>
+                <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
+                <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
+              </div>
+            </details>
             <a className="nav-pill" href="/">Today</a>
             <a className="nav-pill" href="/profile">Profile</a>
+            <a className="nav-pill" href="/settings">Settings</a>
           </nav>
         </header>
 
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-4">
-            {unlocked.length > 0 && (
-              <div className="card space-y-4">
-                <div>
-                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Unlocked</p>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">🏆 Your wins</h2>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {unlocked.map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-3xl">{achievement.icon}</div>
-                          <p className="mt-2 font-semibold text-slate-900 dark:text-slate-50">{achievement.name}</p>
-                          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{achievement.description}</p>
-                        </div>
+        <div className="space-y-4">
+          {unlocked.length > 0 && (
+            <div className="card space-y-4">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Unlocked</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">🏆 Your wins</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {unlocked.map((achievement) => (
+                  <div
+                    key={achievement.id}
+                    className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-3xl">{achievement.icon}</div>
+                        <p className="mt-2 font-semibold text-slate-900 dark:text-slate-50">{achievement.name}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{achievement.description}</p>
                       </div>
-                      {achievement.unlockedAt && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                          Earned on {new Date(achievement.unlockedAt).toLocaleDateString()}
-                        </p>
-                      )}
                     </div>
-                  ))}
-                </div>
+                    {achievement.unlockedAt && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                        Earned on {new Date(achievement.unlockedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
-
-            {locked.length > 0 && (
-              <div className="card space-y-4">
-                <div>
-                  <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Locked</p>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">🔒 Next targets</h2>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {locked.map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white/60 dark:bg-slate-800/50 opacity-80"
-                    >
-                      <div className="text-3xl grayscale">{achievement.icon}</div>
-                      <p className="mt-2 font-semibold text-slate-700 dark:text-slate-200">{achievement.name}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{achievement.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <div className="card sticky top-6 space-y-3">
-              <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Navigation</p>
-              <nav className="flex flex-col gap-2">
-                <a className="pill pill-ghost text-left" href="/moments">📔 Moments</a>
-                <a className="pill pill-ghost text-left" href="/stats">📊 Stats</a>
-                <a className="pill pill-ghost text-left" href="/friends">👥 Friends</a>
-                <a className="pill pill-ghost text-left" href="/leaderboard">🎖️ Leaderboard</a>
-                <a className="pill pill-ghost text-left" href="/buddy">🤝 Buddy</a>
-                <a className="pill pill-ghost text-left" href="/settings">⚙️ Settings</a>
-              </nav>
             </div>
-          </div>
+          )}
+
+          {locked.length > 0 && (
+            <div className="card space-y-4">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Locked</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">🔒 Next targets</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {locked.map((achievement) => (
+                  <div
+                    key={achievement.id}
+                    className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white/60 dark:bg-slate-800/50 opacity-80"
+                  >
+                    <div className="text-3xl grayscale">{achievement.icon}</div>
+                    <p className="mt-2 font-semibold text-slate-700 dark:text-slate-200">{achievement.name}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{achievement.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </main>

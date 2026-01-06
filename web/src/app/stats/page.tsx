@@ -190,7 +190,6 @@ export default function StatsPage() {
                 <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
                 <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
                 <button className="pill pill-ghost block w-full text-left" type="button" onClick={logout}>🚪 Logout</button>
-                <button className="pill pill-ghost block w-full text-left" type="button" onClick={logout}>🚪 Logout</button>
               </div>
             </details>
             <a className="nav-pill" href="/">Today</a>
@@ -245,7 +244,7 @@ export default function StatsPage() {
             <div className="alert alert-success">
               <div>
                 <p className="font-semibold">
-                  You've taken {stats.questsCompleted} intentional breaks instead of endless scrolling.
+                  You've completed {stats.questsCompleted} quests so far.
                 </p>
                 <p className="text-sm opacity-80 mt-1">
                   That's {stats.totalMinutes} minutes you chose to spend on things that matter to you.

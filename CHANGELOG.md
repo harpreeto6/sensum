@@ -4,7 +4,7 @@ Quick notes on the bigger changes in this repo — the kind of updates that don�
 
 ## Unreleased
 
-- Notes for in-progress work go here.
+- Stats: replaced the “intentional breaks” hero line with total quests completed to avoid misleading zeros; revisit a better definition later.
 
 ## 2026-01-05 — Demo reliability + docs polish
 

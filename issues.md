@@ -43,7 +43,7 @@ A running list of known issues and improvement ideas found while reviewing the c
 - **Severity:** High
 - **Where:** Stats controller
 - **Why it matters:** “Today” metrics can leak or mix data across users; also doesn’t match typical per-user expectations.
-- **Suggested fix:** Filter by authenticated `userId` and date window; consider admin-only global stats if needed.
+- **Status:** Resolved — `/stats/today` is now filtered by the authenticated `userId`.
 
 ---
 

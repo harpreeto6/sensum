@@ -69,6 +69,11 @@ Screenshots (from `docs/screenshots/`):
   - ![Extension nudge overlay](docs/screenshots/extension_nudge_overlay.png)
   - ![Extension popup + service worker](docs/screenshots/popup_service_worker.png)
 
+Metrics note:
+
+- The Stats page currently highlights total quests completed.
+- A future improvement is to show “quests completed after opening Sensum from the extension (popup or nudge)” (by explicitly tracking app opens from the extension) so the number better matches “intentional breaks.”
+
 ## Run locally
 
 ### 1) Start Postgres

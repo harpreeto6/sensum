@@ -49,9 +49,8 @@ public class StatsController {
     /**
      * Returns global "today" metrics.
      *
-     * <p><b>Important:</b> this endpoint currently does not filter by user. It is used as a simple
-     * aggregate view of today's activity (useful during development). The per-user summary is provided by
-     * {@link #summary(int, jakarta.servlet.http.HttpServletRequest)}.</p>
+        * <p><b>Important:</b> this endpoint is per-user and requires authentication. The authenticated
+        * user id is read from the request attribute "userId" which is set by the JWT authentication filter.</p>
      *
      * <p>Event name compatibility:</p>
      * <ul>
@@ -61,34 +60,45 @@ public class StatsController {
      * This endpoint counts both to remain backward compatible.</p>
      */
     @GetMapping("/today")
-    public TodayStatsResponse today() {
+    public TodayStatsResponse today(jakarta.servlet.http.HttpServletRequest req) {
+        Long userId = (Long) req.getAttribute("userId");
+        if (userId == null) {
+            return new TodayStatsResponse(0, 0, 0, 0, 0);
+        }
+
         Integer trackedSeconds = jdbc.queryForObject(
                 "SELECT COALESCE(SUM(duration_sec), 0) " +
                         "FROM events " +
-                        "WHERE event_type IN ('tick','time_spent') AND ts::date = CURRENT_DATE",
-                Integer.class
+                        "WHERE user_id = ? AND event_type IN ('tick','time_spent') AND ts::date = CURRENT_DATE",
+                Integer.class,
+                userId
         );
 
         Integer nudgesShown = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM events WHERE event_type IN ('nudge','nudge_shown') AND ts::date = CURRENT_DATE",
-                Integer.class
+                "SELECT COUNT(*) FROM events WHERE user_id = ? AND event_type IN ('nudge','nudge_shown') AND ts::date = CURRENT_DATE",
+                Integer.class,
+                userId
         );
 
         Integer questsCompletedToday = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM quest_completions WHERE completed_at::date = CURRENT_DATE",
-                Integer.class
+                "SELECT COUNT(*) FROM quest_completions WHERE user_id = ? AND completed_at::date = CURRENT_DATE",
+                Integer.class,
+                userId
         );
 
         Integer questsAfterFirstNudge = jdbc.queryForObject(
                 "SELECT CASE " +
-                        "WHEN (SELECT COUNT(*) FROM events WHERE event_type IN ('nudge','nudge_shown') AND ts::date = CURRENT_DATE) = 0 THEN 0 " +
+                        "WHEN (SELECT COUNT(*) FROM events WHERE user_id = ? AND event_type IN ('nudge','nudge_shown') AND ts::date = CURRENT_DATE) = 0 THEN 0 " +
                         "ELSE ( " +
                         "  SELECT COUNT(*) FROM quest_completions " +
-                        "  WHERE completed_at >= ( " +
-                        "    SELECT MIN(ts) FROM events WHERE event_type IN ('nudge','nudge_shown') AND ts::date = CURRENT_DATE " +
+                        "  WHERE user_id = ? AND completed_at >= ( " +
+                        "    SELECT MIN(ts) FROM events WHERE user_id = ? AND event_type IN ('nudge','nudge_shown') AND ts::date = CURRENT_DATE " +
                         "  ) " +
                         ") END",
-                Integer.class
+                Integer.class,
+                userId,
+                userId,
+                userId
         );
 
         int seconds = trackedSeconds == null ? 0 : trackedSeconds;

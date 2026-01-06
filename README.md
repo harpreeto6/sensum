@@ -22,8 +22,8 @@ This repository is a monorepo containing:
 
 ```mermaid
 flowchart LR
-  Ext[Browser Extension] -->|POST /api/events (cookies)| WebOrigin[Next.js @ localhost:3000]
-  WebOrigin -->|rewrite /api/* -> backend| API[Spring Boot @ localhost:8080]
+  Ext["Browser Extension"] -->|"POST /api/events (cookies)"| WebOrigin["Next.js (localhost:3000)"]
+  WebOrigin -->|"rewrite /api/* to backend"| API["Spring Boot (localhost:8080)"]
   API --> DB[(Postgres)]
 ```
 

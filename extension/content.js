@@ -1,5 +1,8 @@
 console.log("Sensum content script loaded on:", location.hostname);
 
+// Note: Auth + event ingestion is handled in the background service worker.
+// The content script is only responsible for rendering the in-page nudge UI.
+
 const OVERLAY_ID = "sensum-nudge-overlay";
 
 function removeOverlay() {

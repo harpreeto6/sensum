@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/auth")
 /**
@@ -55,6 +57,13 @@ public class AuthController {
      * @param userId id of the authenticated user when successful; may be null for 401 responses
      */
     public record AuthResponse(Long userId) {}
+
+    /**
+     * Response body for {@link #extensionToken(HttpServletRequest)}.
+     *
+     * @param token JWT for Authorization: Bearer usage (same format as cookie token)
+     */
+    public record ExtensionTokenResponse(String token) {}
 
     /**
      * Creates a new user account.
@@ -131,6 +140,35 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header("Set-Cookie", clear.toString())
                 .build();
+    }
+
+    /**
+     * Returns a JWT for the currently authenticated user.
+     *
+        * <p>This exists to support clients that cannot reliably send SameSite cookie auth
+        * (e.g., browser extensions). The token can be used as {@code Authorization: Bearer <token>}.
+        *
+        * <p>Notes:</p>
+        * <ul>
+        *   <li>This endpoint requires the caller to already be authenticated (via cookie).</li>
+        *   <li>The returned token is the same format as the cookie token (JWT signed by the backend).</li>
+        *   <li>The extension stores this token locally and uses it only for event ingestion.</li>
+        * </ul>
+     */
+    @GetMapping("/extension-token")
+    public ResponseEntity<ExtensionTokenResponse> extensionToken(HttpServletRequest request) {
+        Object rawUserId = request.getAttribute("userId");
+        if (!(rawUserId instanceof Long userId)) {
+            return ResponseEntity.status(401).body(new ExtensionTokenResponse(null));
+        }
+
+        User u = users.findById(userId).orElse(null);
+        if (u == null) {
+            return ResponseEntity.status(401).body(new ExtensionTokenResponse(null));
+        }
+
+        String token = JwtUtil.generateToken(u.id, u.email);
+        return ResponseEntity.ok(new ExtensionTokenResponse(token));
     }
 
     /**

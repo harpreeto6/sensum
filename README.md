@@ -1,67 +1,77 @@
 # Sensum
 
-Sensum is a focused productivity + wellbeing app that helps you become more intentional about how you spend time online.
+Sensum is a focused wellbeing + productivity app that helps you become more intentional about time online. It pairs gentle browser nudges with quick “quests” (2–10 minutes) you can complete offline (Calm, Fitness, Study, Music, Friends, Outdoors).
 
-It combines:
-- A browser extension that tracks time spent and nudges you when you drift.
-- A web app where you can manage settings and see your progress.
-- A Spring Boot API + Postgres database that stores users, events, quests, and settings.
+This repository is a monorepo containing:
+
+- **Web app** (Next.js + TypeScript + Tailwind): quests, progress, moments journal, settings, friends feed, buddy sessions.
+- **Backend API** (Spring Boot + Postgres): authentication, recommendations, persistence, social features, analytics.
+- **Browser extension (Manifest V3)**: time tracking on selected sites, overlay nudges, telemetry batching.
+
+## Key features
+
+- **Secure auth:** email/password + BCrypt hashing; JWT stored in an HttpOnly cookie (`sensum_token`).
+- **Quest loop:** recommend 3 quests, complete/skip/snooze, award XP, compute level + daily streak.
+- **Personalization (v1):** learns from historical outcomes (complete/skip) and adds light randomness for exploration.
+- **Moments journal:** save short reflections either alongside quest completions or as standalone entries.
+- **Invite-only social:** create invite codes, accept invites, control sharing via per-user privacy settings.
+- **Buddy sessions:** start/join sessions, check in, end sessions.
+- **Extension nudges:** per-domain snooze/disable, cooldowns, event batching + periodic flush to the API.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  Ext[Browser Extension] -->|POST /events (cookies)| API[Backend: Spring Boot]
-  Web[Web App: Next.js] -->|calls API (cookies)| API
+  Ext[Browser Extension] -->|POST /api/events (cookies)| WebOrigin[Next.js @ localhost:3000]
+  WebOrigin -->|rewrite /api/* -> backend| API[Spring Boot @ localhost:8080]
   API --> DB[(Postgres)]
 ```
 
 Notes:
-- Auth is cookie-based (an HttpOnly JWT cookie named `sensum_token`).
-- The web app and extension must send cookies (`credentials: "include"`) so the backend can identify the user.
 
-## Quest Recommendation Algorithm (v1)
+- Backend is stateless; authentication is via an HttpOnly JWT cookie.
+- The web app and extension must send cookies (web uses `credentials: "include"`).
 
-The quest recommendation endpoint returns up to 3 “micro-action” quests for a given path/category.
+## Tech stack
 
-- Endpoint: `GET /quests/recommendations?path=<category>`
-- Candidate pool: all quests where `quest.category == path` (via `QuestRepository.findByCategory(path)`)
+- **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS
+- **Backend:** Java 17, Spring Boot (WebMVC, Security, Validation), Spring Data JPA
+- **Database:** PostgreSQL + Flyway migrations
+- **Extension:** Chrome/Edge MV3 (service worker background + content script overlay)
 
-### Scoring + personalization
+## Repo structure
 
-When the user is authenticated, Sensum computes a per-quest score from historical outcomes:
+```text
+sensum/
+  backend/     Spring Boot API + Flyway migrations
+  web/         Next.js web app
+  extension/   Chromium extension (MV3)
+  docker-compose.yml
+```
 
-$$score = 2 \times completed - 1 \times skipped$$
+Extension details (install/usage/internals): see [extension.md](extension.md).
 
-- `completed` and `skipped` come from `quest_outcomes` aggregated per quest for that user.
-- `snoozed` outcomes are recorded but not currently used in scoring.
+## Screenshots / demo
 
-### Exploration (randomness)
+Screenshots (from `docs/screenshots/`):
 
-To avoid returning the same 3 quests every time, the backend adds a small random factor during sorting (0–0.5) so similarly-scored quests occasionally rotate.
+- Today (highlights)
+  - ![Today page showing highlights](docs/screenshots/today_page_showing_highlights.png)
+- Today (quests)
+  - ![Quests on Today page](docs/screenshots/quests_on_today_page.png)
+- Settings
+  - ![Settings](docs/screenshots/settings.png)
+- Friends
+  - ![Friends page](docs/screenshots/friends_page.png)
+- Stats
+  - ![Stats](docs/screenshots/stats.png)
+- Extension
+  - ![Extension nudge overlay](docs/screenshots/extension_nudge_overlay.png)
+  - ![Extension popup + service worker](docs/screenshots/popup_service_worker.png)
 
-### Cold-start behavior
+## Run locally
 
-If the request is unauthenticated (no `userId` from the JWT cookie), or the pool is empty, the backend falls back to shuffling the pool and returning the first 3.
-
-### Feedback loop
-
-- `POST /quests/complete` records a completion and also stores an outcome of `completed`.
-- `POST /quests/skip` records an outcome of `skipped`.
-
-Over time this nudges recommendations toward quests the user tends to complete and away from ones they skip.
-
-## UX Improvements (Highlights)
-
-- Unified top navigation across pages (Menu + direct Today link)
-- Today shows XP/level/streak by default, including an XP progress bar aligned to backend level math (`level = 1 + xp/500`)
-- Moments are supported as standalone entries (not only tied to quests), and the Moments page shows Quests and Moments separately
-- Moments/Quests history supports grouping by day and incremental “Load 10 more” for quest history
-- Achievement modal styling updated to match the app theme
-
-## How to run (local dev)
-
-### 1) Start Postgres (Docker)
+### 1) Start Postgres
 
 From the repo root:
 
@@ -69,18 +79,18 @@ From the repo root:
 docker compose up -d
 ```
 
-This starts Postgres on `localhost:5432` (database/user/password are configured in `docker-compose.yml`).
+Postgres runs on `localhost:5432` (credentials in `docker-compose.yml`).
 
-### 2) Start the backend (Spring Boot)
+### 2) Start the backend
 
 ```powershell
 cd backend
 .\mvnw spring-boot:run
 ```
 
-Backend runs on: `http://localhost:8080`
+Backend: `http://localhost:8080`
 
-### 3) Start the web app (Next.js)
+### 3) Start the web app
 
 ```powershell
 cd web
@@ -88,74 +98,75 @@ npm install
 npm run dev
 ```
 
-Web runs on: `http://localhost:3000`
+Web: `http://localhost:3000`
 
-The web app expects the backend at: `http://localhost:8080`
+### 4) Load the extension (optional)
 
-### 4) (Optional for local dev) Load the extension
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select the `extension/` folder
 
-Chrome/Edge:
-- Go to `chrome://extensions`
-- Enable **Developer mode**
-- Click **Load unpacked**
-- Select the `extension/` folder in this repo
+The extension posts events to `http://localhost:3000/api/events` (which Next rewrites to the backend).
 
-## Screenshots / GIF
-to be done
-<!--
-Add screenshots/GIFs that demonstrate the core flow:
-- Login / Signup
-- Settings page (paths, nudge threshold, tracked domains)
-- Extension running + sending an event
-- Any “results” view (profile / stats / leaderboard)
+## Quest recommendation algorithm (v1)
 
-Suggested locations (create these files and update links below):
-- `docs/screenshots/settings.png`
-- `docs/demo.gif`
+Endpoint:
 
-<!-- Example embeds (uncomment after you add files)
+- `GET /quests/recommendations?path=<category>`
 
-![Settings](docs/screenshots/settings.png)
+Candidate pool:
 
-![Demo](docs/demo.gif)
+- All quests where `quest.category == path`
 
--->
+If authenticated, Sensum computes a per-quest score from historical outcomes:
 
-## 60–90 second demo video
-to be done
-<!-- follow this structure when making video
-Record a short demo (a phone screen-record is fine). A simple script:
-1. Open the web app, sign up or log in.
-2. Show the Settings page (selected paths, tracked domains, nudge threshold).
-3. Trigger an example event (use the extension briefly), then refresh the web app.
-4. Show that the backend attributed events to the logged-in user (e.g., profile/stats/leaderboard updates).
+$$score = 2 \times completed - 1 \times skipped$$
 
-Tip: If the extension isn’t part of the recording, you can still demo event ingestion using a quick POST to `/events` after logging in.
+- Outcomes are stored in `quest_outcomes` (`completed`, `skipped`, `snoozed`).
+- `snoozed` is recorded but not currently used in scoring.
+- A small random factor is added during sorting so similarly-scored quests rotate.
+
+## API overview (high level)
+
+- **Auth:** `POST /auth/signup`, `POST /auth/login`, `POST /auth/logout`, `GET /me`
+- **Settings:** `GET /me/settings`, `PUT /me/settings`
+- **Quests:** `GET /quests/recommendations`, `POST /quests/complete`, `POST /quests/skip`, `POST /quests/snooze`
+- **Events:** `POST /events` (accepts single or batch)
+- **Moments:** `GET /me/moments`, `POST /me/moments`
+- **Quest history:** `GET /me/quests/completions`
+- **Friends:** invite codes, accept, list, feed
+- **Buddy:** start/join/checkin/end + list/session details
+- **Stats:** `GET /stats/today`, `GET /stats/summary`
+
+## Engineering principles demonstrated
+
+- **Security-first defaults:** BCrypt hashing; HttpOnly cookie JWT; server-side user attribution.
+- **Separation of concerns:** frontend uses `/api/*` proxy; backend owns validation and persistence.
+- **Explainable personalization:** simple scoring + feedback loop from user actions.
+- **Resilient telemetry:** extension batches events and flushes periodically.
 
 ## Quick smoke test (optional)
 
-This is a fast way to prove auth + `/me` + `/events` work end-to-end.
+Validate auth + `/me` + `/events` end-to-end:
 
 ```powershell
 $base = "http://localhost:8080"
 
-# Create a new account
 $email = "demo-$([Guid]::NewGuid().ToString('N').Substring(0,8))@example.com"
 $pass  = "password123"
 
 $signupBody = @{ email = $email; password = $pass } | ConvertTo-Json
 Invoke-WebRequest -UseBasicParsing -Uri "$base/auth/signup" -Method Post -ContentType "application/json" -Body $signupBody -SessionVariable sess
 
-# Confirm cookie auth works
 Invoke-RestMethod -Uri "$base/me" -Method Get -WebSession $sess
 
-# Post an event
 $evt = @{ domain = "example.com"; durationSec = 30; eventType = "time_spent"; ts = (Get-Date).ToString("o") } | ConvertTo-Json
 Invoke-RestMethod -Uri "$base/events" -Method Post -ContentType "application/json" -WebSession $sess -Body $evt
-```-->
+```
 
-## Notes (dev setup)
+## Dev notes
 
 - The web app calls the backend via `/api/*`.
 - In local dev, Next.js rewrites `/api/:path*` to `http://localhost:8080/:path*` (see [web/next.config.js](web/next.config.js)).
-- There is also a [web/next.config.ts](web/next.config.ts) file in this repo, but the rewrite currently lives in the JS config.
+- `web/next.config.ts` exists, but the rewrite currently lives in the JS config.

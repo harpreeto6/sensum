@@ -3,12 +3,21 @@ console.log("Sensum background service worker loaded");
 const TRACKED_SUFFIXES = ["youtube.com", "tiktok.com", "instagram.com", "reddit.com"];
 
 const EVENT_POST_URL = "http://localhost:3000/api/events";
+const WEB_APP_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
+const AUTH_COOKIE_NAME = "sensum_token";
 const FLUSH_INTERVAL_SEC = 60;
+
+// JWT used for Authorization: Bearer <token> when posting events.
+// This is needed because the backend cookie is SameSite=Lax and won't be sent by the browser
+// on cross-site requests from a chrome-extension:// origin.
+let apiToken = null;
 
 let pendingEvents = [];
 
 const DEFAULT_THRESHOLD_SEC = 8 * 60;
-const COOLDOWN_SEC = 20 * 60; // 20 minutes cooldown after nudge
+// Cooldown disabled for now (nudges can re-trigger whenever threshold is hit).
+// Re-enable later if you want fewer interruptions.
+const COOLDOWN_SEC = 0;
 const TICK_SEC = 5;
 let disabledDomains = [];
 let snoozeUntilByDomain = {};
@@ -23,6 +32,48 @@ let activeDomainSec = 0;
 // Retry logic
 let retryCount = 0;
 const MAX_RETRIES = 5;
+
+async function loadApiToken() {
+  const data = await chrome.storage.local.get(["apiToken"]);
+  apiToken = typeof data.apiToken === "string" && data.apiToken.length > 0 ? data.apiToken : null;
+  console.log("API token loaded:", apiToken ? "(present)" : "(none)");
+}
+
+async function refreshApiTokenFromCookie() {
+  // Recommended approach: read the HttpOnly JWT cookie via the Chrome Cookies API.
+  // This bypasses SameSite restrictions that block extension-origin fetch cookies.
+  try {
+    let token = null;
+    let foundOn = null;
+
+    for (const origin of WEB_APP_ORIGINS) {
+      const cookie = await chrome.cookies.get({ url: origin, name: AUTH_COOKIE_NAME });
+      const candidate = cookie && typeof cookie.value === "string" && cookie.value.length > 0 ? cookie.value : null;
+      if (candidate) {
+        token = candidate;
+        foundOn = origin;
+        break;
+      }
+    }
+
+    if (token && token !== apiToken) {
+      apiToken = token;
+      await chrome.storage.local.set({ apiToken });
+      console.log("API token refreshed from cookie:", foundOn ?? "(unknown)");
+      return true;
+    }
+    if (!token) {
+      console.log(
+        "API token refresh: cookie not found. Open the web app and log in:",
+        WEB_APP_ORIGINS.join(" or ")
+      );
+    }
+    return false;
+  } catch (e) {
+    console.warn("API token refresh error:", e);
+    return false;
+  }
+}
 
 //helper to push events
 
@@ -44,9 +95,12 @@ async function flushEvents() {
   pendingEvents = [];
 
   try {
+    const headers = { "Content-Type": "application/json" };
+    if (apiToken) headers["Authorization"] = `Bearer ${apiToken}`;
+
     const res = await fetch(EVENT_POST_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(batch),
       credentials: "include"
     });
@@ -54,6 +108,28 @@ async function flushEvents() {
     console.log("flush:", res.status, res.url);
 
     if (!res.ok) {
+      // If we're unauthorized, try refreshing the token from the cookie once.
+      if (res.status === 401 || res.status === 403) {
+        const refreshed = await refreshApiTokenFromCookie();
+        if (refreshed) {
+          const retryHeaders = { "Content-Type": "application/json", "Authorization": `Bearer ${apiToken}` };
+          const retryRes = await fetch(EVENT_POST_URL, {
+            method: "POST",
+            headers: retryHeaders,
+            body: JSON.stringify(batch),
+            credentials: "include",
+          });
+
+          console.log("flush (retry):", retryRes.status, retryRes.url);
+          if (retryRes.ok) {
+            const data = await retryRes.json().catch(() => null);
+            console.log("Event flush ok (retry):", data ?? "(no json)");
+            retryCount = 0;
+            return;
+          }
+        }
+      }
+
       // Put back so we can retry later
       pendingEvents = batch.concat(pendingEvents);
       retryCount++;
@@ -115,6 +191,8 @@ async function loadNudgeSettings() {
 }
 
 loadNudgeSettings();
+loadApiToken();
+refreshApiTokenFromCookie();
 
 async function tick() {
   const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
@@ -221,6 +299,16 @@ setInterval(flushEvents, FLUSH_INTERVAL_SEC * 1000);
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (!msg || !msg.type) return;
+
+  if (msg.type === "SET_API_TOKEN") {
+    // Token is minted by the backend via /auth/extension-token and sent from the web app
+    // to the extension through the content-script token bridge.
+    const token = typeof msg.token === "string" ? msg.token.trim() : "";
+    apiToken = token.length > 0 ? token : null;
+    chrome.storage.local.set({ apiToken });
+    console.log("API token updated:", apiToken ? "(present)" : "(cleared)");
+    return;
+  }
 
   if (msg.type === "OPEN_SENSUM") {
     const domain = msg.domain;

@@ -20,6 +20,20 @@ export default function LeaderboardPage() {
   const [view, setView] = useState<'global' | 'friends'>('global');
   const [metric, setMetric] = useState<'xp' | 'streak' | 'level' | 'quest_count'>('xp');
 
+  async function logout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Ignore network errors; still clear local state and redirect.
+    } finally {
+      localStorage.removeItem("userId");
+      router.push("/login");
+    }
+  }
+
   useEffect(() => {
     const id = localStorage.getItem('userId');
     if (!id) {
@@ -105,6 +119,7 @@ export default function LeaderboardPage() {
                 <a className="pill pill-ghost block" href="/leaderboard">🎖️ Leaderboard</a>
                 <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
                 <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
+                <button className="pill pill-ghost block w-full text-left" type="button" onClick={logout}>🚪 Logout</button>
               </div>
             </details>
             <a className="nav-pill" href="/">Today</a>

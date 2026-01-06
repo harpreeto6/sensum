@@ -1,9 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+
+  async function logout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Ignore network errors; still clear local state and redirect.
+    } finally {
+      localStorage.removeItem("userId");
+      router.push("/login");
+    }
+  }
 
   useEffect(() => {
     setUserId(localStorage.getItem("userId"));
@@ -32,6 +48,7 @@ export default function ProfilePage() {
                 <a className="pill pill-ghost block" href="/leaderboard">🎖️ Leaderboard</a>
                 <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
                 <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
+                <button className="pill pill-ghost block w-full text-left" type="button" onClick={logout}>🚪 Logout</button>
               </div>
             </details>
             <a className="nav-pill" href="/profile">Profile</a>

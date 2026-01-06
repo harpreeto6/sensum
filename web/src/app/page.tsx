@@ -45,6 +45,20 @@ export default function TodayPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<number | null>(null);
 
+  async function logout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Ignore network errors; still clear local state and redirect.
+    } finally {
+      localStorage.removeItem("userId");
+      router.push("/login");
+    }
+  }
+
   const [path, setPath] = useState<(typeof PATHS)[number]>("calm");
   const [mood, setMood] = useState<(typeof MOODS)[number]>("okay");
 
@@ -142,8 +156,8 @@ export default function TodayPage() {
     }
   }
 
-  async function loadQuests(selectedPath = path) {
-    setMsg("");
+  async function loadQuests(selectedPath = path, opts?: { preserveMsg?: boolean }) {
+    if (!opts?.preserveMsg) setMsg("");
     localStorage.setItem("path", selectedPath);
 
     const res = await fetch(`/api/quests/recommendations?path=${encodeURIComponent(selectedPath)}`, {
@@ -202,9 +216,9 @@ export default function TodayPage() {
     localStorage.setItem("moments", JSON.stringify(prev.slice(0, 50)));
 
     setMomentText("");
-    setMsg(`✨ Nice work! +${data.gainedXp} XP earned`);
+    setMsg(`✨ Nice work! +${data.gainedXp} XP · Streak saved ✅`);
     setTimeout(() => setMsg(""), 3000);
-    await loadQuests(path);
+    await loadQuests(path, { preserveMsg: true });
   }
 
   async function handleSkip(questId: number) {
@@ -335,6 +349,7 @@ export default function TodayPage() {
                 <a className="pill pill-ghost block" href="/leaderboard">🎖️ Leaderboard</a>
                 <a className="pill pill-ghost block" href="/buddy">🤝 Buddy</a>
                 <a className="pill pill-ghost block" href="/metrics">📈 Metrics</a>
+                <button className="pill pill-ghost block w-full text-left" type="button" onClick={logout}>🚪 Logout</button>
               </div>
             </details>
             <a className="nav-pill" href="/profile">Profile</a>
@@ -348,13 +363,6 @@ export default function TodayPage() {
               <p className="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Progress</p>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">XP, Level, Streak</h2>
             </div>
-            <button
-              className="btn-primary"
-              onClick={() => loadQuests()}
-              disabled={quests.length > 0}
-            >
-              {quests.length > 0 ? "✓ Quests loaded" : "Get 3 quests"}
-            </button>
           </div>
 
           {progress ? (
@@ -466,6 +474,14 @@ export default function TodayPage() {
                       </button>
                     ))}
                   </div>
+
+                  <button
+                    className="btn-primary py-2 px-3 text-sm"
+                    onClick={() => loadQuests()}
+                    disabled={quests.length > 0}
+                  >
+                    {quests.length > 0 ? "✓ Quests loaded" : "Get 3 quests"}
+                  </button>
                 </div>
 
                 <div className="space-y-3">

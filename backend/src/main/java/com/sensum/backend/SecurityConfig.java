@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health", "/error").permitAll()
-                        .requestMatchers("/auth/signup", "/auth/login").permitAll()
+                    .requestMatchers("/auth/signup", "/auth/login", "/auth/logout").permitAll()
                         .requestMatchers("/metrics", "/metrics/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -81,8 +81,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Allow requests from Next.js dev server and extension.
-        configuration.setAllowedOrigins(Arrays.asList(
+        // NOTE: Spring CORS wildcard support requires *patterns*, not setAllowedOrigins.
+        // Using allowedOriginPatterns allows chrome-extension://<extension-id> to match.
+        configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",      // Next.js frontend
+            "http://127.0.0.1:3000",      // Alternative local dev origin
             "chrome-extension://*"        // Browser extension
         ));
 

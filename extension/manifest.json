@@ -13,22 +13,31 @@
     "service_worker": "background.js"
   },
 
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs", "storage", "cookies"],
 
   "host_permissions": [
+    "*://youtube.com/*",
     "*://*.youtube.com/*",
+    "*://tiktok.com/*",
     "*://*.tiktok.com/*",
+    "*://instagram.com/*",
     "*://*.instagram.com/*",
+    "*://reddit.com/*",
     "*://*.reddit.com/*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*"
   ],
 
   "content_scripts": [
     {
       "matches": [
+        "*://youtube.com/*",
         "*://*.youtube.com/*",
+        "*://tiktok.com/*",
         "*://*.tiktok.com/*",
+        "*://instagram.com/*",
         "*://*.instagram.com/*",
+        "*://reddit.com/*",
         "*://*.reddit.com/*"
       ],
       "js": ["content.js"]

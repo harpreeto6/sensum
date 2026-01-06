@@ -18,25 +18,46 @@ import java.util.Collections;
 
 @Component
 /**
- * Spring Security filter that authenticates requests using the Sensum JWT cookie.
+ * Spring Security filter that authenticates requests using a Sensum JWT.
  *
- * <p>Behavior:
+ * <p>Supported transports:</p>
  * <ol>
- *   <li>Reads the JWT from the {@link #COOKIE_NAME} cookie.</li>
- *   <li>Validates the token via {@link JwtUtil#validateToken(String)}.</li>
- *   <li>If valid, sets an {@link org.springframework.security.core.Authentication} in the
- *       {@link SecurityContextHolder}.</li>
- *   <li>Also attaches {@code userId} to {@link HttpServletRequest} attributes for controller code
- *       that prefers request-scoped access.</li>
+ *   <li>Primary: HttpOnly cookie named {@link #COOKIE_NAME} (browser/web app flow).</li>
+ *   <li>Fallback: {@code Authorization: Bearer <jwt>} header (extension flow).</li>
  * </ol>
  *
- * <p>If the token is missing, invalid, or expired, the request continues unauthenticated.
- * Authorization is enforced later by Spring Security configuration.
+ * <p>Why the Bearer fallback exists:</p>
+ * <ul>
+ *   <li>The web app uses a SameSite cookie for auth.</li>
+ *   <li>Browser extensions often cannot send SameSite cookies on cross-site fetches.</li>
+ *   <li>Bearer auth allows the extension to authenticate without relying on cookie behavior.</li>
+ * </ul>
+ *
+ * <p>Behavior:</p>
+ * <ol>
+ *   <li>Read JWT from cookie; if missing, read Bearer token.</li>
+ *   <li>Validate token via {@link JwtUtil#validateToken(String)}.</li>
+ *   <li>If valid, set {@link org.springframework.security.core.Authentication} and attach
+ *       {@code userId} to the request.</li>
+ * </ol>
+ *
+ * <p>If token is missing/invalid/expired, the request continues unauthenticated. Authorization is
+ * enforced later by Spring Security configuration.
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Cookie name we’ll set on login/signup
     public static final String COOKIE_NAME = "sensum_token";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    private static String readBearerToken(HttpServletRequest request) {
+        String header = request.getHeader(AUTHORIZATION_HEADER);
+        if (header == null) return null;
+        if (!header.startsWith(BEARER_PREFIX)) return null;
+        String token = header.substring(BEARER_PREFIX.length()).trim();
+        return token.isEmpty() ? null : token;
+    }
 
     @Override
     /**
@@ -49,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 1) Read cookie
+        // 1) Read cookie first (browser -> backend flow)
         String token = null;
         if (request.getCookies() != null) {
             for (Cookie c : request.getCookies()) {
@@ -60,7 +81,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 2) If no token, continue without auth
+        // 2) Fallback: read Authorization: Bearer <token> (extension/mobile flows)
+        if (token == null || token.isBlank()) {
+            token = readBearerToken(request);
+        }
+
+        // 3) If no token, continue without auth
         if (token != null) {
             try {
                 Claims claims = JwtUtil.validateToken(token);
